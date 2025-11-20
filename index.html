@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nákupný zoznam · Neon hologram + Sheets sync</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent-pink:#ff6fb5;
+      --accent-pink-strong:#ff3fa2;
+      --accent-lilac:#a855f7;
+      --accent-blue:#38bdf8;
+      --accent-mint:#22c55e;
+      --text-main:#020617;
+      --text-muted:#6b7280;
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:"Nunito",system-ui,sans-serif;
+      display:flex;
+      justify-content:center;
+      padding:20px 12px;
+      color:var(--text-main);
+      /* HOLOGRAMOVÉ DÚHOVÉ POZADIE – statické, bez točenia */
+      background:
+        radial-gradient(circle at 0% 0%, rgba(244,114,182,0.95), transparent 55%),
+        radial-gradient(circle at 12% 100%, rgba(56,189,248,0.95), transparent 55%),
+        radial-gradient(circle at 88% 0%, rgba(250,204,21,0.9), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(168,85,247,0.98), transparent 55%),
+        radial-gradient(circle at 50% 35%, rgba(34,197,94,0.85), transparent 60%),
+        linear-gradient(135deg, #020617, #020617 35%, #020617 70%, #020617 100%);
+      background-size:150% 150%;
+      background-attachment:fixed;
+      transition:background .3s,color .3s;
+    }
+
+    body.theme-dark{
+      color:#e5e7eb;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(30,64,175,1), transparent 55%),
+        radial-gradient(circle at 100% 0%, rgba(56,189,248,0.9), transparent 55%),
+        radial-gradient(circle at 0% 100%, rgba(22,163,74,0.85), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(168,85,247,1), transparent 55%),
+        linear-gradient(135deg,#020617,#020617 40%,#020617 100%);
+      background-size:150% 150%;
+      background-attachment:fixed;
+    }
+
+    .shell{
+      width:100%;
+      max-width:520px;
+      transform-origin:center;
+    }
+
+    .card{
+      position:relative;
+      border-radius:26px;
+      padding:14px 14px 10px;
+      background:radial-gradient(circle at top,#fdfcff,#f9fafb);
+      overflow:hidden;
+    }
+
+    body.theme-dark .card{
+      background:radial-gradient(circle at top,#020617,#020617 45%,#020617 100%);
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-1px;
+      padding:1px;
+      border-radius:27px;
+      background:conic-gradient(
+        from 220deg,
+        rgba(244,114,182,1),
+        rgba(56,189,248,1),
+        rgba(45,212,191,1),
+        rgba(250,204,21,1),
+        rgba(168,85,247,1),
+        rgba(244,114,182,1)
+      );
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;
+              mask-composite:exclude;
+      pointer-events:none;
+      opacity:.95;
+    }
+
+    .header-panel{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:14px;
+      padding:12px 18px 14px;
+      border-radius:22px;
+      background:
+        radial-gradient(circle at 0 0,rgba(255,255,255,.98),transparent 60%),
+        linear-gradient(135deg,#fee2f8,#e0f2fe,#dcfce7);
+      box-shadow:
+        0 20px 45px rgba(15,23,42,.7),
+        0 0 32px rgba(244,114,182,.9);
+      margin-bottom:10px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    body.theme-dark .header-panel{
+      background:
+        radial-gradient(circle at 0 0,rgba(15,23,42,1),transparent 60%),
+        linear-gradient(135deg,#020617,#020617,#111827);
+      box-shadow:
+        0 22px 48px rgba(0,0,0,1),
+        0 0 32px rgba(56,189,248,1);
+    }
+
+    .logo-orbit{
+      width:68px;height:68px;
+      border-radius:24px;
+      background:radial-gradient(circle at 20% 0%,#ffffff,#ffe0f4);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:
+        0 18px 36px rgba(244,114,182,1),
+        0 0 22px rgba(244,114,182,.9);
+      position:relative;
+      z-index:1;
+      overflow:hidden;
+    }
+
+    body.theme-dark .logo-orbit{
+      background:radial-gradient(circle at 20% 0%,#020617,#111827);
+      box-shadow:
+        0 18px 36px rgba(56,189,248,1),
+        0 0 22px rgba(59,130,246,1);
+    }
+
+    .logo-orbit svg{
+      width:50px;
+      height:50px;
+      display:block;
+    }
+
+    .header-text{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      align-items:center;
+      text-align:center;
+      position:relative;
+      z-index:1;
+    }
+
+    .title{
+      font-family:"Baloo 2",system-ui,sans-serif;
+      font-size:2.1rem;
+      letter-spacing:.05em;
+      background:linear-gradient(120deg,#020617,#1f2937);
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+
+    body.theme-dark .title{
+      background:linear-gradient(120deg,#f9fafb,#e5e7eb);
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+
+    .stats{
+      font-size:.9rem;
+      color:var(--text-muted);
+      display:flex;
+      gap:8px;
+    }
+
+    body.theme-dark .stats{color:#9ca3af;}
+    .stats strong{color:#ec4899;}
+
+    .theme-toggle{
+      border:none;border-radius:999px;
+      width:34px;height:34px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:#020617;
+      color:#f9fafb;
+      box-shadow:
+        0 10px 22px rgba(15,23,42,.9),
+        0 0 14px rgba(59,130,246,.9);
+      cursor:pointer;
+      position:relative;
+      z-index:1;
+      transition:transform .15s ease,box-shadow .15s ease,background .15s ease,color .15s ease;
+    }
+
+    body.theme-dark .theme-toggle{
+      background:#f9fafb;
+      color:#020617;
+      box-shadow:
+        0 8px 18px rgba(15,23,42,.7),
+        0 0 14px rgba(244,114,182,1);
+    }
+
+    .theme-toggle:active{
+      transform:scale(.9) translateY(1px);
+      box-shadow:0 3px 7px rgba(15,23,42,.6);
+    }
+
+    .sync-bar{margin:6px 0 8px;}
+
+    .sync-inner{
+      border-radius:999px;
+      padding:6px 11px;
+      background:linear-gradient(120deg,rgba(255,255,255,.85),rgba(248,250,252,.95));
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border:1px solid rgba(148,163,184,.7);
+      box-shadow:0 12px 26px rgba(15,23,42,.4);
+    }
+
+    body.theme-dark .sync-inner{
+      background:linear-gradient(120deg,rgba(15,23,42,.95),rgba(15,23,42,1));
+      border-color:#1f2937;
+      box-shadow:0 14px 30px rgba(0,0,0,1);
+    }
+
+    .sync-status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:4px 11px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.9);
+      background:rgba(248,250,252,.9);
+      font-size:.78rem;
+      color:var(--text-muted);
+      transition:background .2s ease,box-shadow .2s ease,transform .2s ease,color .2s ease,border-color .2s ease;
+    }
+
+    body.theme-dark .sync-status-pill{
+      background:rgba(15,23,42,.95);
+      border-color:#334155;
+      color:#e5e7eb;
+    }
+
+    .sync-status-pill .dot{
+      width:9px;height:9px;border-radius:999px;
+      background:#9ca3af;
+    }
+
+    .sync-status-pill.synced{
+      background:radial-gradient(circle at 0 0,#bbf7d0,#22c55e);
+      color:#064e3b;
+      box-shadow:
+        0 0 0 1px rgba(34,197,94,.7),
+        0 0 20px rgba(34,197,94,1);
+      transform:translateY(-1px);
+      border-color:rgba(22,163,74,1);
+    }
+
+    .sync-status-pill.synced .dot{
+      background:#16a34a;
+      box-shadow:0 0 8px rgba(34,197,94,1);
+    }
+
+    .sync-status-pill.loading .dot{
+      background:#facc15;
+    }
+
+    .sync-actions{display:flex;align-items:center;gap:6px;}
+
+    .btn-mini{
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.9);
+      background:radial-gradient(circle at 0 0,#ffffff,#e0ecff);
+      padding:4px 11px;
+      font-size:.8rem;
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(15,23,42,.55);
+      transition:transform .15s ease,box-shadow .15s ease,background .15s ease,border-color .15s ease;
+    }
+
+    body.theme-dark .btn-mini{
+      background:radial-gradient(circle at 0 0,#020617,#1e293b);
+      border-color:#64748b;
+      color:#e5e7eb;
+      box-shadow:0 8px 20px rgba(0,0,0,1);
+    }
+
+    .btn-mini:active{
+      transform:scale(.94) translateY(1px);
+      box-shadow:0 3px 7px rgba(15,23,42,.65);
+    }
+
+    .add-card{
+      border-radius:20px;
+      background:radial-gradient(circle at 0 0,#ffffff,#f9fafb);
+      border:1px solid rgba(226,232,240,1);
+      padding:8px;
+      margin-bottom:8px;
+      box-shadow:0 14px 30px rgba(15,23,42,.3);
+    }
+
+    body.theme-dark .add-card{
+      background:#020617;
+      border-color:#1f2937;
+      box-shadow:0 12px 26px rgba(0,0,0,1);
+    }
+
+    .add-row{
+      display:grid;
+      grid-template-columns:minmax(0,2.4fr) .9fr auto;
+      gap:8px;
+    }
+
+    .input-name,.input-qty{
+      border-radius:999px;
+      border:1px solid #d1d5db;
+      padding:11px 13px;
+      font-family:inherit;
+      font-size:1rem;
+      outline:none;
+      transition:border-color .15s ease,box-shadow .15s ease,background .15s ease,transform .15s ease;
+    }
+
+    .input-qty{
+      max-width:90px;
+      text-align:center;
+      padding:9px 10px;
+      font-size:.9rem;
+    }
+
+    body.theme-dark .input-name,
+    body.theme-dark .input-qty{
+      background:#020617;
+      color:#e5e7eb;
+      border-color:#4b5563;
+    }
+
+    .input-name::placeholder,.input-qty::placeholder{
+      color:#9ca3af;
+    }
+
+    .input-name:focus,.input-qty:focus{
+      border-color:var(--accent-pink-strong);
+      box-shadow:0 0 0 1px rgba(248,113,190,.8),0 0 18px rgba(248,113,190,.6);
+      background:#ffffff;
+      transform:translateY(-1px);
+    }
+
+    body.theme-dark .input-name:focus,
+    body.theme-dark .input-qty:focus{
+      background:#020617;
+    }
+
+    .btn-add{
+      border:none;border-radius:999px;
+      padding:10px 14px;
+      background:conic-gradient(
+        from 220deg,
+        #f97316,
+        #fb7185,
+        #ec4899,
+        #a855f7,
+        #38bdf8,
+        #22c55e,
+        #f97316
+      );
+      color:#ffffff;
+      font-size:1.5rem;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:
+        0 18px 40px rgba(15,23,42,.9),
+        0 0 22px rgba(248,113,190,1);
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      transition:transform .18s ease,box-shadow .18s ease;
+    }
+
+    .btn-add::after{
+      content:"";
+      position:absolute;
+      inset:3px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 0%,#ffffff,#ffe4f3);
+      opacity:.98;
+    }
+
+    .btn-add span{
+      position:relative;
+      z-index:1;
+    }
+
+    .btn-add:hover{
+      transform:translateY(-1px) scale(1.03);
+    }
+
+    .btn-add:active{
+      transform:translateY(2px) scale(.95);
+      box-shadow:0 8px 18px rgba(15,23,42,1);
+    }
+
+    .list-wrapper{
+      border-radius:20px;
+      background:
+        radial-gradient(circle at 50% 0%,rgba(129,140,248,.35),rgba(255,255,255,.99) 60%);
+      border:1px solid rgba(226,232,240,1);
+      padding:8px;
+      min-height:260px;
+      max-height:min(600px,65vh);
+      display:flex;
+      flex-direction:column;
+      box-shadow:0 18px 36px rgba(15,23,42,.3);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+    }
+
+    body.theme-dark .list-wrapper{
+      background:
+        radial-gradient(circle at 50% 0%,rgba(59,130,246,.4),rgba(15,23,42,.98) 62%);
+      border-color:#111827;
+      box-shadow:0 18px 40px rgba(0,0,0,1);
+    }
+
+    .list-scroll{
+      flex:1;
+      overflow-y:auto;
+      padding-right:4px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      scrollbar-width:thin;
+      scrollbar-color:#c4d3ff transparent;
+    }
+
+    .list-scroll::-webkit-scrollbar{width:6px;}
+    .list-scroll::-webkit-scrollbar-thumb{
+      background:#c4d3ff;
+      border-radius:999px;
+    }
+
+    .group-title{
+      margin:3px 6px 1px;
+      font-size:.8rem;
+      color:var(--text-muted);
+      display:flex;
+      align-items:center;
+      gap:7px;
+    }
+
+    body.theme-dark .group-title{color:#9ca3af;}
+
+    .group-title .dot{
+      width:9px;height:9px;border-radius:999px;
+      background:linear-gradient(135deg,#38bdf8,#a855f7);
+      box-shadow:0 0 12px rgba(56,189,248,1);
+    }
+
+    .group-title.done .dot{
+      background:linear-gradient(135deg,#22c55e,#bbf7d0);
+      box-shadow:0 0 12px rgba(34,197,94,1);
+    }
+
+    .item{
+      position:relative;
+      display:grid;
+      grid-template-columns:auto minmax(0,1.8fr) auto;
+      gap:12px;
+      align-items:center;
+      padding:11px 11px 10px;
+      border-radius:20px;
+      background:
+        radial-gradient(circle at 0 0,rgba(248,250,252,1),rgba(226,232,255,1));
+      border:1px solid #e5e7eb;
+      box-shadow:0 8px 16px rgba(15,23,42,.2);
+      overflow:hidden;
+      min-height:64px;
+    }
+
+    body.theme-dark .item{
+      background:#020617;
+      border-color:#1f2937;
+      box-shadow:0 10px 20px rgba(0,0,0,1);
+    }
+
+    .item.bought{
+      background:
+        radial-gradient(circle at 0 0,rgba(240,253,250,1),rgba(190,242,205,1));
+      border-color:#22c55e;
+      box-shadow:0 9px 20px rgba(22,163,74,.7);
+    }
+
+    body.theme-dark .item.bought{
+      background:
+        radial-gradient(circle at 0 0,rgba(6,95,70,1),rgba(5,46,32,1));
+      border-color:#16a34a;
+      box-shadow:0 9px 22px rgba(22,163,74,1);
+    }
+
+    .check{
+      width:32px;height:32px;border-radius:13px;
+      border:2px solid #9ca3af;
+      display:flex;align-items:center;justify-content:center;
+      background:#f9fafb;
+      cursor:pointer;
+      box-shadow:0 4px 9px rgba(15,23,42,.4);
+      transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease;
+      position:relative;
+      z-index:1;
+    }
+
+    body.theme-dark .check{
+      background:#020617;
+      border-color:#9ca3af;
+      box-shadow:0 4px 10px rgba(0,0,0,1);
+    }
+
+    .check span{
+      font-size:1.4rem;
+      opacity:0;
+      transition:opacity .15s ease,transform .15s ease;
+    }
+
+    .item.bought .check{
+      background:radial-gradient(circle at 30% 0%,#ffffff,#22c55e);
+      border-color:#22c55e;
+      transform:scale(1.06);
+      box-shadow:0 6px 16px rgba(34,197,94,1);
+    }
+
+    .item.bought .check span{
+      opacity:1;
+      transform:scale(1.02);
+    }
+
+    .item-main{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+      position:relative;
+      z-index:1;
+    }
+
+    .item-title-row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+
+    .item-name{
+      font-size:1.1rem;
+      font-weight:700;
+      word-break:break-word;
+      color:#020617;
+    }
+
+    body.theme-dark .item-name{color:#e5e7eb;}
+
+    .item.bought .item-name{
+      text-decoration:line-through;
+      text-decoration-thickness:2px;
+      text-decoration-color:rgba(15,23,42,.4);
+      color:#166534;
+    }
+
+    body.theme-dark .item.bought .item-name{
+      text-decoration-color:#022c22;
+      color:#bbf7d0;
+    }
+
+    .qty-pill{
+      font-size:.85rem;
+      padding:3px 9px;
+      border-radius:999px;
+      background:rgba(148,163,184,.25);
+      font-weight:600;
+      color:#0f172a;
+    }
+
+    body.theme-dark .qty-pill{
+      background:rgba(15,23,42,.85);
+      color:#e5e7eb;
+      border:1px solid #1d4ed8;
+    }
+
+    .item-meta-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      font-size:.78rem;
+      color:var(--text-muted);
+    }
+
+    body.theme-dark .item-meta-row{color:#9ca3af;}
+
+    .time-pill{
+      padding:2px 8px;
+      border-radius:999px;
+      background:rgba(148,163,184,.16);
+    }
+
+    body.theme-dark .time-pill{
+      background:rgba(15,23,42,.95);
+      border:1px solid #4b5563;
+    }
+
+    .item-actions{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-end;
+      position:relative;
+      z-index:1;
+    }
+
+    .btn-mini.delete{
+      border-color:#fda4af;
+      background:radial-gradient(circle at 0 0,#fff1f2,#fecaca);
+      box-shadow:0 6px 14px rgba(248,113,190,.8);
+    }
+
+    body.theme-dark .btn-mini.delete{
+      background:radial-gradient(circle at 0 0,#450a0a,#7f1d1d);
+      border-color:#fecaca;
+      box-shadow:0 8px 18px rgba(127,29,29,1);
+    }
+
+    .empty-state{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      font-size:.9rem;
+      color:var(--text-muted);
+      padding:18px 10px;
+    }
+
+    body.theme-dark .empty-state{color:#9ca3af;}
+
+    .empty-emoji{
+      font-size:2.6rem;
+      margin-bottom:6px;
+    }
+
+    .empty-icons{
+      font-size:1.4rem;
+      display:flex;
+      gap:6px;
+      margin-bottom:4px;
+    }
+
+    .footer{
+      margin-top:6px;
+      padding-top:6px;
+      border-top:1px solid rgba(226,232,240,1);
+      font-size:.78rem;
+      color:var(--text-muted);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      text-align:center;
+    }
+
+    body.theme-dark .footer{
+      border-top-color:#1f2937;
+      color:#9ca3af;
+    }
+
+    .footer-right{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+
+    .btn-text{
+      border:none;
+      background:transparent;
+      font-size:.8rem;
+      color:#fb7185;
+      text-decoration:underline;
+      cursor:pointer;
+      transition:color .15s ease,transform .15s ease;
+    }
+
+    .btn-text:active{
+      transform:translateY(1px) scale(.97);
+    }
+
+    body.theme-dark .btn-text{color:#fecaca;}
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:16px;
+      transform:translateX(-50%) translateY(120%);
+      padding:7px 11px;
+      border-radius:999px;
+      background:rgba(15,23,42,.96);
+      color:#ffffff;
+      font-size:.8rem;
+      display:flex;
+      gap:6px;
+      align-items:center;
+      box-shadow:0 14px 28px rgba(15,23,42,1);
+      opacity:0;
+      transition:transform .24s ease-out,opacity .22s ease-out;
+      z-index:50;
+    }
+
+    .toast.show{
+      transform:translateX(-50%) translateY(0);
+      opacity:1;
+    }
+  </style>
+</head>
+<body class="theme-light">
+  <div class="shell">
+    <div class="card">
+      <header>
+        <div class="header-panel">
+          <div class="logo-orbit">
+            <svg viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="cartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f97316"/>
+                  <stop offset="30%" stop-color="#fb7185"/>
+                  <stop offset="60%" stop-color="#ec4899"/>
+                  <stop offset="85%" stop-color="#a855f7"/>
+                  <stop offset="100%" stop-color="#38bdf8"/>
+                </linearGradient>
+              </defs>
+              <rect x="6" y="6" width="52" height="52" rx="16" ry="16"
+                    fill="url(#cartGrad)" opacity="0.95"/>
+              <path d="M18 20h4l4 18h18l4-12H28"
+                    fill="none"
+                    stroke="#ffffff"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round" />
+              <circle cx="30" cy="42.5" r="2.8" fill="#ffffff"/>
+              <circle cx="42" cy="42.5" r="2.8" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div class="header-text">
+            <div class="title">Nákupný zoznam</div>
+            <div class="stats">
+              <span>Kúpiť: <strong id="stats-open">0</strong></span>
+              <span>·</span>
+              <span>Kúpené: <strong id="stats-done">0</strong></span>
+            </div>
+          </div>
+          <button id="btn-theme" class="theme-toggle" title="Svetlý / tmavý režim">🌙</button>
+        </div>
+      </header>
+
+      <section class="sync-bar">
+        <div class="sync-inner">
+          <div class="sync-status-pill" id="sync-pill">
+            <span class="dot"></span>
+            <span id="sync-status-text">Sync: offline</span>
+          </div>
+          <div class="sync-actions">
+            <button type="button" class="btn-mini" id="btn-sync">
+              <span class="icon">🔄</span><span>Sync so Sheets</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="add-card">
+        <div class="add-row">
+          <input id="input-name" class="input-name" type="text"
+                 placeholder="Čo treba kúpiť? (mlieko, chlieb…)" autocomplete="off" />
+          <input id="input-qty" class="input-qty" type="text"
+                 placeholder="ks" autocomplete="off" />
+          <button id="btn-add" class="btn-add"><span>＋</span></button>
+        </div>
+      </section>
+
+      <section class="list-wrapper">
+        <div id="list-scroll" class="list-scroll">
+          <div id="empty-state" class="empty-state">
+            <div class="empty-emoji">🧺</div>
+            <div class="empty-icons">🍞 🥛 🥦 🍎</div>
+            <div>Zoznam je zatiaľ prázdny.</div>
+            <div>Pridaj prvú položku, ktorú treba kúpiť.</div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>Sync prebieha cez Google Sheets (jednoduché zdieľanie medzi mobilmi).</div>
+        <div class="footer-right">
+          <button type="button" class="btn-text" id="btn-mark-all-bottom">Odškrtnúť všetko</button>
+          <button type="button" class="btn-text" id="btn-clear-checked">Vymazať odškrtnuté</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">
+    <span id="toast-icon">✨</span><span id="toast-text"></span>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "nakupnyZoznam_neonMEGA_items";
+    const THEME_KEY   = "nakupnyZoznam_neonMEGA_theme";
+    const SYNC_KEY    = "nakupnyZoznam_neonMEGA_sync_ts";
+
+    const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbwuE4wW1TovdS0_SH6uEQzbPbLmWH8ZygSof_AOVBg1wkJVLTYYVKrDT75aeV4oLMO5ww/exec";
+
+    let state = { items: [] };
+
+    function uid(){
+      return "i_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    }
+
+    function showToast(msg, icon="✨"){
+      const t = document.getElementById("toast");
+      document.getElementById("toast-text").textContent = msg;
+      document.getElementById("toast-icon").textContent = icon;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 1800);
+    }
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          const arr = JSON.parse(raw);
+          if(Array.isArray(arr)) state.items = arr;
+        }
+      }catch(e){}
+    }
+
+    function saveState(){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+      }catch(e){}
+      updateStats();
+    }
+
+    function formatDate(iso){
+      if(!iso) return "";
+      const d = new Date(iso);
+      if(isNaN(d.getTime())) return "";
+      const dd = String(d.getDate()).padStart(2,"0");
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      return dd+"."+mm+". "+hh+":"+mi;
+    }
+
+    function updateStats(){
+      const open = state.items.filter(i=>!i.bought).length;
+      const done = state.items.filter(i=>i.bought).length;
+      document.getElementById("stats-open").textContent = open;
+      document.getElementById("stats-done").textContent = done;
+    }
+
+    function addItem(name, qty){
+      const n = (name||"").trim();
+      const q = (qty||"").trim();
+      if(!n){
+        showToast("Napíš, čo treba kúpiť.","📝");
+        return;
+      }
+      state.items.unshift({id:uid(), name:n, qty:q, bought:false, boughtAt:null});
+      saveState();
+      render();
+      showToast("Pridané do zoznamu.","🛒");
+    }
+
+    function toggleBought(id){
+      const it = state.items.find(i=>i.id===id);
+      if(!it) return;
+      if(it.bought){
+        it.bought=false; it.boughtAt=null;
+        showToast("Vrátené medzi kúpiť.","↩️");
+      }else{
+        it.bought=true; it.boughtAt=new Date().toISOString();
+        showToast("Odškrtnuté ako kúpené.","✅");
+      }
+      saveState();
+      render();
+    }
+
+    function deleteSingle(id){
+      const idx = state.items.findIndex(i=>i.id===id);
+      if(idx===-1) return;
+      const name = state.items[idx].name;
+      if(!confirm("Vymazať položku: "+name+"?")) return;
+      state.items.splice(idx,1);
+      saveState();
+      render();
+      showToast("Vymazané: "+name,"🗑️");
+    }
+
+    function deleteChecked(){
+      const hasDone = state.items.some(i=>i.bought);
+      if(!hasDone){
+        showToast("Nie je čo vymazať.","🤷‍♀️");
+        return;
+      }
+      if(!confirm("Vymazať všetky kúpené položky?")) return;
+      state.items = state.items.filter(i=>!i.bought);
+      saveState();
+      render();
+      showToast("Kúpené položky vymazané.","🗑️");
+    }
+
+    function markAllBought(){
+      if(!state.items.length){
+        showToast("Zoznam je prázdny.","🧺");
+        return;
+      }
+      const now = new Date().toISOString();
+      state.items.forEach(i=>{i.bought=true;i.boughtAt=now;});
+      saveState();
+      render();
+      showToast("Všetko odškrtnuté ako kúpené.","✅");
+    }
+
+    function exportSyncTimestampSuccess(fromClick){
+      localStorage.setItem(SYNC_KEY, Date.now().toString());
+      updateSyncStatus(fromClick);
+    }
+
+    function syncToSheets(){
+      const pill = document.getElementById("sync-pill");
+      const text = document.getElementById("sync-status-text");
+      if(pill){
+        pill.classList.add("loading");
+        pill.classList.remove("synced");
+      }
+      if(text) text.textContent = "Sync: prebieha…";
+
+      if(!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE"){
+        if(pill){
+          pill.classList.remove("loading","synced");
+        }
+        if(text) text.textContent = "Sync: nenastavený";
+        showToast("Najprv vlož URL z Google Apps Script.","ℹ️");
+        return;
+      }
+
+      fetch(SHEETS_SYNC_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ action:"sync", items: state.items || [] })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if(Array.isArray(data.items)){
+          state.items = data.items;
+          saveState();
+          render();
+        }
+        exportSyncTimestampSuccess(true);
+        if(pill){
+          pill.classList.remove("loading");
+          pill.classList.add("synced");
+        }
+        if(text) text.textContent = "Sync: hotovo";
+        showToast("Sync so Sheets hotový 💾","✅");
+      })
+      .catch(err=>{
+        console.error(err);
+        if(pill){
+          pill.classList.remove("loading","synced");
+        }
+        if(text) text.textContent = "Sync: chyba";
+        showToast("Sync zlyhal. Skús neskôr.","⚠️");
+      });
+    }
+
+    function updateSyncStatus(fromClick){
+      const pill = document.getElementById("sync-pill");
+      const text = document.getElementById("sync-status-text");
+      const ts = localStorage.getItem(SYNC_KEY);
+      if(!pill || !text) return;
+
+      pill.classList.remove("loading","synced");
+      if(!ts){
+        text.textContent = "Sync: offline";
+        return;
+      }
+      const diff = Date.now() - Number(ts);
+      const minutes = Math.round(diff/60000);
+      pill.classList.add("synced");
+      if(minutes<=1){
+        text.textContent = "Sync: práve teraz";
+      }else if(minutes<60){
+        text.textContent = "Sync: pred "+minutes+" min";
+      }else{
+        const h = Math.round(minutes/60);
+        text.textContent = "Sync: pred "+h+" h";
+      }
+      if(fromClick) showToast("Zoznam je zosúladený.","✅");
+    }
+
+    function render(){
+      const cont = document.getElementById("list-scroll");
+      const empty = document.getElementById("empty-state");
+      cont.innerHTML = "";
+      if(!state.items.length){
+        cont.appendChild(empty);
+        updateStats();
+        return;
+      }
+
+      const open = state.items.filter(i=>!i.bought);
+      const done = state.items.filter(i=>i.bought);
+
+      if(open.length){
+        const t = document.createElement("div");
+        t.className="group-title";
+        t.innerHTML="<span class='dot'></span><span>Kúpiť</span>";
+        cont.appendChild(t);
+        open.forEach(it=>cont.appendChild(renderItem(it)));
+      }
+      if(done.length){
+        const t2 = document.createElement("div");
+        t2.className="group-title done";
+        t2.innerHTML="<span class='dot'></span><span>Kúpené</span>";
+        cont.appendChild(t2);
+        done.forEach(it=>cont.appendChild(renderItem(it)));
+      }
+      updateStats();
+    }
+
+    function renderItem(it){
+      const card = document.createElement("div");
+      card.className="item"+(it.bought?" bought":"");
+
+      const check = document.createElement("div");
+      check.className="check";
+      check.innerHTML="<span>✔</span>";
+      check.addEventListener("click",e=>{e.stopPropagation();toggleBought(it.id);});
+
+      const main = document.createElement("div");
+      main.className="item-main";
+
+      const row = document.createElement("div");
+      row.className="item-title-row";
+      const name = document.createElement("div");
+      name.className="item-name";
+      name.textContent = it.name;
+      row.appendChild(name);
+      if(it.qty){
+        const q = document.createElement("div");
+        q.className="qty-pill";
+        q.textContent = it.qty;
+        row.appendChild(q);
+      }
+
+      const meta = document.createElement("div");
+      meta.className="item-meta-row";
+      if(it.bought && it.boughtAt){
+        const t = document.createElement("div");
+        t.className = "time-pill";
+        t.textContent = formatDate(it.boughtAt);
+        meta.appendChild(t);
+      }
+
+      main.appendChild(row);
+      main.appendChild(meta);
+
+      const actions = document.createElement("div");
+      actions.className="item-actions";
+      const del = document.createElement("button");
+      del.className="btn-mini delete";
+      del.innerHTML="<span>🗑️</span>";
+      del.addEventListener("click",e=>{e.stopPropagation(); deleteSingle(it.id);});
+      actions.appendChild(del);
+
+      card.appendChild(check);
+      card.appendChild(main);
+      card.appendChild(actions);
+      return card;
+    }
+
+    function loadTheme(){
+      const saved = localStorage.getItem(THEME_KEY);
+      const body = document.body;
+      const btn = document.getElementById("btn-theme");
+      if(saved==="dark"){
+        body.classList.remove("theme-light");
+        body.classList.add("theme-dark");
+        btn.textContent="☀️";
+      }else{
+        body.classList.remove("theme-dark");
+        body.classList.add("theme-light");
+        btn.textContent="🌙";
+      }
+    }
+
+    function toggleTheme(){
+      const body = document.body;
+      const btn = document.getElementById("btn-theme");
+      if(body.classList.contains("theme-dark")){
+        localStorage.setItem(THEME_KEY,"light");
+        body.classList.remove("theme-dark");
+        body.classList.add("theme-light");
+        btn.textContent="🌙";
+        showToast("Svetlý režim","☀️");
+      }else{
+        localStorage.setItem(THEME_KEY,"dark");
+        body.classList.remove("theme-light");
+        body.classList.add("theme-dark");
+        btn.textContent="☀️";
+        showToast("Tmavý režim","🌙");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      loadTheme();
+      updateSyncStatus(false);
+      updateStats();
+      render();
+
+      const nameInput = document.getElementById("input-name");
+      const qtyInput  = document.getElementById("input-qty");
+      const btnAdd    = document.getElementById("btn-add");
+
+      function handleEnter(e){
+        if(e.key==="Enter"){
+          e.preventDefault();
+          addItem(nameInput.value, qtyInput.value);
+          nameInput.value="";
+          qtyInput.value="";
+          nameInput.focus();
+        }
+      }
+
+      btnAdd.addEventListener("click", e=>{
+        e.preventDefault();
+        addItem(nameInput.value, qtyInput.value);
+        nameInput.value="";
+        qtyInput.value="";
+        nameInput.focus();
+      });
+
+      nameInput.addEventListener("keydown", handleEnter);
+      qtyInput.addEventListener("keydown", handleEnter);
+
+      document.getElementById("btn-mark-all-bottom").addEventListener("click", markAllBought);
+      document.getElementById("btn-clear-checked").addEventListener("click", deleteChecked);
+      document.getElementById("btn-sync").addEventListener("click", syncToSheets);
+      document.getElementById("btn-theme").addEventListener("click", toggleTheme);
+    });
+  </script>
+</body>
+</html>
