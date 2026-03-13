@@ -2,6 +2,8 @@
 <html lang="sk">
 <head>
   <meta charset="UTF-8" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
   <title>Nákupný zoznam · Neon hologram + Sheets sync</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -837,10 +839,13 @@
     const STORAGE_KEY = "nakupnyZoznam_neonMEGA_items";
     const THEME_KEY   = "nakupnyZoznam_neonMEGA_theme";
     const SYNC_KEY    = "nakupnyZoznam_neonMEGA_sync_ts";
+    const AUTO_SYNC_DELAY = 1500;
 
-    const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbwuE4wW1TovdS0_SH6uEQzbPbLmWH8ZygSof_AOVBg1wkJVLTYYVKrDT75aeV4oLMO5ww/exec";
+    const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbw260UlklkZ4KEtiTvfHtvRr_z3R1Te5Ne3Foch9e38nBuWaeo1Y9eRY7dLKqONmyquFg/exec";
 
     let state = { items: [] };
+    let autoSyncTimer = null;
+    let isSyncInProgress = false;
 
     function uid(){
       return "i_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -899,6 +904,7 @@
       state.items.unshift({id:uid(), name:n, qty:q, bought:false, boughtAt:null});
       saveState();
       render();
+      scheduleAutoSync();
       showToast("Pridané do zoznamu.","🛒");
     }
 
@@ -914,16 +920,17 @@
       }
       saveState();
       render();
+      scheduleAutoSync();
     }
 
     function deleteSingle(id){
       const idx = state.items.findIndex(i=>i.id===id);
       if(idx===-1) return;
       const name = state.items[idx].name;
-      if(!confirm("Vymazať položku: "+name+"?")) return;
       state.items.splice(idx,1);
       saveState();
       render();
+      scheduleAutoSync();
       showToast("Vymazané: "+name,"🗑️");
     }
 
@@ -937,6 +944,7 @@
       state.items = state.items.filter(i=>!i.bought);
       saveState();
       render();
+      scheduleAutoSync();
       showToast("Kúpené položky vymazané.","🗑️");
     }
 
@@ -949,6 +957,7 @@
       state.items.forEach(i=>{i.bought=true;i.boughtAt=now;});
       saveState();
       render();
+      scheduleAutoSync();
       showToast("Všetko odškrtnuté ako kúpené.","✅");
     }
 
@@ -957,7 +966,18 @@
       updateSyncStatus(fromClick);
     }
 
-    function syncToSheets(){
+    function scheduleAutoSync(){
+      if(!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE") return;
+      clearTimeout(autoSyncTimer);
+      autoSyncTimer = setTimeout(() => {
+        syncToSheets(false);
+      }, AUTO_SYNC_DELAY);
+    }
+
+    function syncToSheets(showFeedback = true){
+      if(isSyncInProgress) return;
+      isSyncInProgress = true;
+      clearTimeout(autoSyncTimer);
       const pill = document.getElementById("sync-pill");
       const text = document.getElementById("sync-status-text");
       if(pill){
@@ -967,41 +987,48 @@
       if(text) text.textContent = "Sync: prebieha…";
 
       if(!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE"){
+        isSyncInProgress = false;
         if(pill){
           pill.classList.remove("loading","synced");
         }
         if(text) text.textContent = "Sync: nenastavený";
-        showToast("Najprv vlož URL z Google Apps Script.","ℹ️");
+        if(showFeedback) showToast("Najprv vlož URL z Google Apps Script.","ℹ️");
         return;
       }
 
       fetch(SHEETS_SYNC_URL,{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
         body:JSON.stringify({ action:"sync", items: state.items || [] })
       })
       .then(r => r.json())
       .then(data => {
-        if(Array.isArray(data.items)){
+        isSyncInProgress = false;
+        if(Array.isArray(data)){
+          state.items = data;
+          saveState();
+          render();
+        }else if(Array.isArray(data.items)){
           state.items = data.items;
           saveState();
           render();
         }
-        exportSyncTimestampSuccess(true);
+        exportSyncTimestampSuccess(showFeedback);
         if(pill){
           pill.classList.remove("loading");
           pill.classList.add("synced");
         }
         if(text) text.textContent = "Sync: hotovo";
-        showToast("Sync so Sheets hotový 💾","✅");
+        if(showFeedback) showToast("Sync so Sheets hotový 💾","✅");
       })
       .catch(err=>{
+        isSyncInProgress = false;
         console.error(err);
         if(pill){
           pill.classList.remove("loading","synced");
         }
         if(text) text.textContent = "Sync: chyba";
-        showToast("Sync zlyhal. Skús neskôr.","⚠️");
+        if(showFeedback) showToast("Sync zlyhal. Skús neskôr.","⚠️");
       });
     }
 
@@ -1181,6 +1208,413 @@
       document.getElementById("btn-sync").addEventListener("click", syncToSheets);
       document.getElementById("btn-theme").addEventListener("click", toggleTheme);
     });
+  </script>
+  <script>
+    (function () {
+      function setStaticText() {
+        document.title = "Nakupny zoznam · Neon hologram + Sheets sync";
+
+        const title = document.querySelector(".title");
+        if (title) title.textContent = "Nakupny zoznam";
+
+        const stats = document.querySelector(".stats");
+        if (stats) {
+          stats.innerHTML = '<span>Kupit: <strong id="stats-open">0</strong></span><span> · </span><span>Kupene: <strong id="stats-done">0</strong></span>';
+          if (typeof updateStats === "function") updateStats();
+        }
+
+        const themeButton = document.getElementById("btn-theme");
+        if (themeButton) themeButton.title = "Svetly / tmavy rezim";
+
+        const syncButton = document.getElementById("btn-sync");
+        if (syncButton) syncButton.innerHTML = '<span class="icon">&#128260;</span><span>Sync so Sheets</span>';
+
+        const nameInput = document.getElementById("input-name");
+        if (nameInput) nameInput.placeholder = "Co treba kupit? (mlieko, chlieb...)";
+
+        const emptyState = document.getElementById("empty-state");
+        if (emptyState) {
+          emptyState.innerHTML = [
+            '<div class="empty-emoji">&#129533;</div>',
+            '<div class="empty-icons">&#127838; &#129365; &#129382; &#127822;</div>',
+            '<div>Zoznam je zatial prazdny.</div>',
+            '<div>Pridaj prvu polozku, ktoru treba kupit.</div>'
+          ].join("");
+        }
+
+        const footer = document.querySelector(".footer > div");
+        if (footer) footer.textContent = "Sync prebieha cez Google Sheets (jednoduche zdielanie medzi mobilmi).";
+
+        const markAllButton = document.getElementById("btn-mark-all-bottom");
+        if (markAllButton) markAllButton.textContent = "Oznacit vsetko";
+
+        const clearCheckedButton = document.getElementById("btn-clear-checked");
+        if (clearCheckedButton) clearCheckedButton.textContent = "Vymazat oznacene";
+      }
+
+      showToast = function (msg, icon) {
+        const toast = document.getElementById("toast");
+        const toastText = document.getElementById("toast-text");
+        const toastIcon = document.getElementById("toast-icon");
+        if (!toast || !toastText || !toastIcon) return;
+        toastText.textContent = msg;
+        toastIcon.textContent = icon || "\u2728";
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1800);
+      };
+
+      render = function () {
+        const cont = document.getElementById("list-scroll");
+        const empty = document.getElementById("empty-state");
+        cont.innerHTML = "";
+        if (!state.items.length) {
+          cont.appendChild(empty);
+          updateStats();
+          return;
+        }
+
+        const open = state.items.filter(i => !i.bought);
+        const done = state.items.filter(i => i.bought);
+
+        if (open.length) {
+          const t = document.createElement("div");
+          t.className = "group-title";
+          t.innerHTML = "<span class='dot'></span><span>Kupit</span>";
+          cont.appendChild(t);
+          open.forEach(it => cont.appendChild(renderItem(it)));
+        }
+        if (done.length) {
+          const t2 = document.createElement("div");
+          t2.className = "group-title done";
+          t2.innerHTML = "<span class='dot'></span><span>Kupene</span>";
+          cont.appendChild(t2);
+          done.forEach(it => cont.appendChild(renderItem(it)));
+        }
+        updateStats();
+      };
+
+      renderItem = function (it) {
+        const card = document.createElement("div");
+        card.className = "item" + (it.bought ? " bought" : "");
+
+        const check = document.createElement("div");
+        check.className = "check";
+        check.innerHTML = "<span>\u2714</span>";
+        check.addEventListener("click", e => {
+          e.stopPropagation();
+          toggleBought(it.id);
+        });
+
+        const main = document.createElement("div");
+        main.className = "item-main";
+
+        const row = document.createElement("div");
+        row.className = "item-title-row";
+        const name = document.createElement("div");
+        name.className = "item-name";
+        name.textContent = it.name;
+        row.appendChild(name);
+        if (it.qty) {
+          const q = document.createElement("div");
+          q.className = "qty-pill";
+          q.textContent = it.qty;
+          row.appendChild(q);
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "item-meta-row";
+        if (it.bought && it.boughtAt) {
+          const t = document.createElement("div");
+          t.className = "time-pill";
+          t.textContent = formatDate(it.boughtAt);
+          meta.appendChild(t);
+        }
+
+        main.appendChild(row);
+        main.appendChild(meta);
+
+        const actions = document.createElement("div");
+        actions.className = "item-actions";
+        const del = document.createElement("button");
+        del.className = "btn-mini delete";
+        del.innerHTML = "<span>\u{1F5D1}\uFE0F</span>";
+        del.addEventListener("click", e => {
+          e.stopPropagation();
+          deleteSingle(it.id);
+        });
+        actions.appendChild(del);
+
+        card.appendChild(check);
+        card.appendChild(main);
+        card.appendChild(actions);
+        return card;
+      };
+
+      loadTheme = function () {
+        const saved = localStorage.getItem(THEME_KEY);
+        const body = document.body;
+        const btn = document.getElementById("btn-theme");
+        if (saved === "dark") {
+          body.classList.remove("theme-light");
+          body.classList.add("theme-dark");
+          if (btn) btn.textContent = "\u2600\uFE0F";
+        } else {
+          body.classList.remove("theme-dark");
+          body.classList.add("theme-light");
+          if (btn) btn.textContent = "\u{1F319}";
+        }
+      };
+
+      toggleTheme = function () {
+        const body = document.body;
+        const btn = document.getElementById("btn-theme");
+        if (body.classList.contains("theme-dark")) {
+          localStorage.setItem(THEME_KEY, "light");
+          body.classList.remove("theme-dark");
+          body.classList.add("theme-light");
+          if (btn) btn.textContent = "\u{1F319}";
+          showToast("Svetly rezim", "\u2600\uFE0F");
+        } else {
+          localStorage.setItem(THEME_KEY, "dark");
+          body.classList.remove("theme-light");
+          body.classList.add("theme-dark");
+          if (btn) btn.textContent = "\u2600\uFE0F";
+          showToast("Tmavy rezim", "\u{1F319}");
+        }
+      };
+
+      addItem = function (name, qty) {
+        const n = (name || "").trim();
+        const q = (qty || "").trim();
+        if (!n) {
+          showToast("Napis, co treba kupit.", "\u{1F4DD}");
+          return;
+        }
+        state.items.unshift({ id: uid(), name: n, qty: q, bought: false, boughtAt: null });
+        saveState();
+        render();
+        scheduleAutoSync();
+        showToast("Pridane do zoznamu.", "\u{1F6D2}");
+      };
+
+      toggleBought = function (id) {
+        const it = state.items.find(i => i.id === id);
+        if (!it) return;
+        if (it.bought) {
+          it.bought = false;
+          it.boughtAt = null;
+          showToast("Vratene medzi polozky na kupu.", "\u21A9\uFE0F");
+        } else {
+          it.bought = true;
+          it.boughtAt = new Date().toISOString();
+          showToast("Oznacene ako kupene.", "\u2705");
+        }
+        saveState();
+        render();
+        scheduleAutoSync();
+      };
+
+      deleteSingle = function (id) {
+        const idx = state.items.findIndex(i => i.id === id);
+        if (idx === -1) return;
+        const name = state.items[idx].name;
+        state.items.splice(idx, 1);
+        saveState();
+        render();
+        scheduleAutoSync();
+        showToast("Vymazane: " + name, "\u{1F5D1}\uFE0F");
+      };
+
+      deleteChecked = function () {
+        const hasDone = state.items.some(i => i.bought);
+        if (!hasDone) {
+          showToast("Nie je co vymazat.", "\u{1F937}");
+          return;
+        }
+        if (!confirm("Vymazat vsetky kupene polozky?")) return;
+        state.items = state.items.filter(i => !i.bought);
+        saveState();
+        render();
+        scheduleAutoSync();
+        showToast("Kupene polozky vymazane.", "\u{1F5D1}\uFE0F");
+      };
+
+      markAllBought = function () {
+        if (!state.items.length) {
+          showToast("Zoznam je prazdny.", "\u{1F9FA}");
+          return;
+        }
+        const now = new Date().toISOString();
+        state.items.forEach(i => {
+          i.bought = true;
+          i.boughtAt = now;
+        });
+        saveState();
+        render();
+        scheduleAutoSync();
+        showToast("Vsetko oznacene ako kupene.", "\u2705");
+      };
+
+      function normalizeItems(items) {
+        if (!Array.isArray(items)) return [];
+        return items
+          .filter(item => item && typeof item.name === "string" && item.name.trim())
+          .map(item => ({
+            id: typeof item.id === "string" && item.id ? item.id : uid(),
+            name: item.name.trim(),
+            qty: typeof item.qty === "string" ? item.qty.trim() : "",
+            bought: Boolean(item.bought),
+            boughtAt: item.boughtAt || null
+          }));
+      }
+
+      function parseSyncResponse(data) {
+        if (Array.isArray(data)) return normalizeItems(data);
+        if (data && Array.isArray(data.items)) return normalizeItems(data.items);
+        return null;
+      }
+
+      function fetchSheetsSnapshot() {
+        const attempts = [
+          () => fetch(SHEETS_SYNC_URL + "?action=get", { method: "GET" }),
+          () => fetch(SHEETS_SYNC_URL + "?action=load", { method: "GET" }),
+          () => fetch(SHEETS_SYNC_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "get" })
+          }),
+          () => fetch(SHEETS_SYNC_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "load" })
+          })
+        ];
+
+        let index = 0;
+        function next() {
+          if (index >= attempts.length) {
+            return Promise.resolve(null);
+          }
+
+          const attempt = attempts[index++];
+          return attempt()
+            .then(response => {
+              if (!response.ok) return null;
+              return response.json().catch(() => null);
+            })
+            .then(data => {
+              const items = parseSyncResponse(data);
+              if (items) return items;
+              return next();
+            })
+            .catch(() => next());
+        }
+
+        return next();
+      }
+
+      syncToSheets = function (showFeedback = true) {
+        if (isSyncInProgress) return;
+        isSyncInProgress = true;
+        clearTimeout(autoSyncTimer);
+        const pill = document.getElementById("sync-pill");
+        const text = document.getElementById("sync-status-text");
+        if (pill) {
+          pill.classList.add("loading");
+          pill.classList.remove("synced");
+        }
+        if (text) text.textContent = "Sync: prebieha...";
+
+        if (!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE") {
+          isSyncInProgress = false;
+          if (pill) pill.classList.remove("loading", "synced");
+          if (text) text.textContent = "Sync: nenastaveny";
+          if (showFeedback) showToast("Najprv vloz URL z Google Apps Script.", "\u2139\uFE0F");
+          return;
+        }
+
+        const localItems = normalizeItems(state.items || []);
+        fetch(SHEETS_SYNC_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "sync", items: localItems })
+        })
+          .then(r => r.json().catch(() => ({})))
+          .then(data => {
+            isSyncInProgress = false;
+            const responseItems = parseSyncResponse(data);
+            state.items = responseItems || localItems;
+            saveState();
+            render();
+            exportSyncTimestampSuccess(showFeedback);
+            if (pill) {
+              pill.classList.remove("loading");
+              pill.classList.add("synced");
+            }
+            if (text) text.textContent = "Sync: hotovo";
+            if (showFeedback) showToast("Sync so Sheets hotovy.", "\u2705");
+          })
+          .catch(err => {
+            isSyncInProgress = false;
+            console.error(err);
+            if (pill) pill.classList.remove("loading", "synced");
+            if (text) text.textContent = "Sync: chyba";
+            if (showFeedback) showToast("Sync zlyhal. Skus neskor.", "\u26A0\uFE0F");
+          });
+      };
+
+      updateSyncStatus = function (fromClick) {
+        const pill = document.getElementById("sync-pill");
+        const text = document.getElementById("sync-status-text");
+        const ts = localStorage.getItem(SYNC_KEY);
+        if (!pill || !text) return;
+
+        pill.classList.remove("loading", "synced");
+        if (!ts) {
+          text.textContent = "Sync: offline";
+          return;
+        }
+        const diff = Date.now() - Number(ts);
+        const minutes = Math.round(diff / 60000);
+        pill.classList.add("synced");
+        if (minutes <= 1) {
+          text.textContent = "Sync: prave teraz";
+        } else if (minutes < 60) {
+          text.textContent = "Sync: pred " + minutes + " min";
+        } else {
+          text.textContent = "Sync: pred " + Math.round(minutes / 60) + " h";
+        }
+        if (fromClick) showToast("Zoznam je zosuladeny.", "\u2705");
+      };
+
+      function bootFixes() {
+        setStaticText();
+        loadTheme();
+        render();
+        updateSyncStatus(false);
+
+        if (!state.items.length && SHEETS_SYNC_URL && SHEETS_SYNC_URL !== "PASTE_WEB_APP_URL_HERE") {
+          fetchSheetsSnapshot().then(remoteItems => {
+            const normalized = normalizeItems(remoteItems);
+            if (!normalized.length) return;
+            state.items = normalized;
+            saveState();
+            render();
+            exportSyncTimestampSuccess(false);
+          }).catch(() => {});
+        }
+
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootFixes);
+      } else {
+        bootFixes();
+      }
+    })();
   </script>
 </body>
 </html>
