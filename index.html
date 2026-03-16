@@ -1263,18 +1263,35 @@
         setTimeout(() => toast.classList.remove("show"), 1800);
       };
 
+      updateStats = function () {
+        const visibleItems = (state.items || []).filter(i => i && !i.deleted);
+        const open = visibleItems.filter(i => !i.bought).length;
+        const done = visibleItems.filter(i => i.bought).length;
+        document.getElementById("stats-open").textContent = open;
+        document.getElementById("stats-done").textContent = done;
+      };
+
+      saveState = function () {
+        try {
+          state.items = normalizeItems(state.items || []);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+        } catch (e) {}
+        updateStats();
+      };
+
       render = function () {
         const cont = document.getElementById("list-scroll");
         const empty = document.getElementById("empty-state");
         cont.innerHTML = "";
-        if (!state.items.length) {
+        const visibleItems = (state.items || []).filter(i => i && !i.deleted);
+        if (!visibleItems.length) {
           cont.appendChild(empty);
           updateStats();
           return;
         }
 
-        const open = state.items.filter(i => !i.bought);
-        const done = state.items.filter(i => i.bought);
+        const open = visibleItems.filter(i => !i.bought);
+        const done = visibleItems.filter(i => i.bought);
 
         if (open.length) {
           const t = document.createElement("div");
@@ -1390,7 +1407,15 @@
           showToast("Napis, co treba kupit.", "\u{1F4DD}");
           return;
         }
-        state.items.unshift({ id: uid(), name: n, qty: q, bought: false, boughtAt: null });
+        state.items.unshift({
+          id: uid(),
+          name: n,
+          qty: q,
+          bought: false,
+          boughtAt: null,
+          updatedAt: new Date().toISOString(),
+          deleted: false
+        });
         saveState();
         render();
         scheduleAutoSync();
@@ -1409,6 +1434,7 @@
           it.boughtAt = new Date().toISOString();
           showToast("Oznacene ako kupene.", "\u2705");
         }
+        it.updatedAt = new Date().toISOString();
         saveState();
         render();
         scheduleAutoSync();
@@ -1418,7 +1444,8 @@
         const idx = state.items.findIndex(i => i.id === id);
         if (idx === -1) return;
         const name = state.items[idx].name;
-        state.items.splice(idx, 1);
+        state.items[idx].deleted = true;
+        state.items[idx].updatedAt = new Date().toISOString();
         saveState();
         render();
         scheduleAutoSync();
@@ -1426,13 +1453,19 @@
       };
 
       deleteChecked = function () {
-        const hasDone = state.items.some(i => i.bought);
+        const hasDone = state.items.some(i => i.bought && !i.deleted);
         if (!hasDone) {
           showToast("Nie je co vymazat.", "\u{1F937}");
           return;
         }
         if (!confirm("Vymazat vsetky kupene polozky?")) return;
-        state.items = state.items.filter(i => !i.bought);
+        const deletedAt = new Date().toISOString();
+        state.items.forEach(i => {
+          if (i.bought && !i.deleted) {
+            i.deleted = true;
+            i.updatedAt = deletedAt;
+          }
+        });
         saveState();
         render();
         scheduleAutoSync();
@@ -1440,14 +1473,16 @@
       };
 
       markAllBought = function () {
-        if (!state.items.length) {
+        const visibleItems = state.items.filter(i => !i.deleted);
+        if (!visibleItems.length) {
           showToast("Zoznam je prazdny.", "\u{1F9FA}");
           return;
         }
         const now = new Date().toISOString();
-        state.items.forEach(i => {
+        visibleItems.forEach(i => {
           i.bought = true;
           i.boughtAt = now;
+          i.updatedAt = now;
         });
         saveState();
         render();
@@ -1464,8 +1499,33 @@
             name: item.name.trim(),
             qty: typeof item.qty === "string" ? item.qty.trim() : "",
             bought: Boolean(item.bought),
-            boughtAt: item.boughtAt || null
+            boughtAt: item.boughtAt || null,
+            updatedAt: item.updatedAt || item.boughtAt || "1970-01-01T00:00:00.000Z",
+            deleted: Boolean(item.deleted)
           }));
+      }
+
+      function mergeItems(localItems, remoteItems) {
+        const merged = new Map();
+        [...normalizeItems(remoteItems), ...normalizeItems(localItems)].forEach(item => {
+          const existing = merged.get(item.id);
+          if (!existing) {
+            merged.set(item.id, item);
+            return;
+          }
+
+          const existingTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+          const itemTime = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+          if (itemTime >= existingTime) {
+            merged.set(item.id, item);
+          }
+        });
+
+        return Array.from(merged.values()).sort((a, b) => {
+          const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return bTime - aTime;
+        });
       }
 
       function parseSyncResponse(data) {
@@ -1534,16 +1594,20 @@
         }
 
         const localItems = normalizeItems(state.items || []);
-        fetch(SHEETS_SYNC_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "sync", items: localItems })
-        })
-          .then(r => r.json().catch(() => ({})))
-          .then(data => {
+        fetchSheetsSnapshot()
+          .then(remoteItems => {
+            const mergedItems = mergeItems(localItems, remoteItems || []);
+            return fetch(SHEETS_SYNC_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: "sync", items: mergedItems })
+            })
+              .then(r => r.json().catch(() => ({})))
+              .then(data => parseSyncResponse(data) || mergedItems);
+          })
+          .then(items => {
             isSyncInProgress = false;
-            const responseItems = parseSyncResponse(data);
-            state.items = responseItems || localItems;
+            state.items = normalizeItems(items || []);
             saveState();
             render();
             exportSyncTimestampSuccess(showFeedback);
@@ -1589,6 +1653,7 @@
 
       function bootFixes() {
         setStaticText();
+        state.items = normalizeItems(state.items || []);
         loadTheme();
         render();
         updateSyncStatus(false);
@@ -1607,12 +1672,481 @@
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.register("./service-worker.js").catch(console.error);
         }
+
+        const syncButton = document.getElementById("btn-sync");
+        if (syncButton) {
+          const replacement = syncButton.cloneNode(true);
+          syncButton.replaceWith(replacement);
+          replacement.addEventListener("click", () => syncToSheets(true));
+        }
+
+        const markAllButton = document.getElementById("btn-mark-all-bottom");
+        if (markAllButton) {
+          const replacement = markAllButton.cloneNode(true);
+          markAllButton.replaceWith(replacement);
+          replacement.addEventListener("click", markAllBought);
+        }
+
+        const clearCheckedButton = document.getElementById("btn-clear-checked");
+        if (clearCheckedButton) {
+          const replacement = clearCheckedButton.cloneNode(true);
+          clearCheckedButton.replaceWith(replacement);
+          replacement.addEventListener("click", deleteChecked);
+        }
       }
 
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", bootFixes);
       } else {
         bootFixes();
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      const TOMBSTONE_TS = "1970-01-01T00:00:00.000Z";
+      const AUTO_SYNC_DELAY_V2 = 700;
+      const REMOTE_CACHE_TTL_MS = 10000;
+      let lastRemoteSnapshotV2 = [];
+      let lastRemoteFetchedAtV2 = 0;
+      let pendingSyncAfterCurrentV2 = false;
+
+      function nowIso() {
+        return new Date().toISOString();
+      }
+
+      function normalizeItemsV2(items) {
+        if (!Array.isArray(items)) return [];
+
+        const merged = new Map();
+        items
+          .filter(item => item && typeof item.name === "string" && item.name.trim())
+          .forEach(item => {
+            const normalized = {
+              id: typeof item.id === "string" && item.id ? item.id : uid(),
+              name: item.name.trim(),
+              qty: "",
+              bought: Boolean(item.bought),
+              boughtAt: item.boughtAt || null,
+              updatedAt: item.updatedAt || item.boughtAt || TOMBSTONE_TS,
+              deleted: item.deleted === true
+            };
+
+            const existing = merged.get(normalized.id);
+            if (!existing) {
+              merged.set(normalized.id, normalized);
+              return;
+            }
+
+            const existingTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+            const normalizedTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
+            if (normalizedTime >= existingTime) {
+              merged.set(normalized.id, normalized);
+            }
+          });
+
+        return Array.from(merged.values()).sort((a, b) => {
+          const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return bTime - aTime;
+        });
+      }
+
+      function visibleItemsV2() {
+        return normalizeItemsV2(state.items || []).filter(item => !item.deleted);
+      }
+
+      function mergeItemsV2(localItems, remoteItems) {
+        return normalizeItemsV2([...(remoteItems || []), ...(localItems || [])]);
+      }
+
+      function parseSyncItemsV2(data) {
+        if (Array.isArray(data)) return normalizeItemsV2(data);
+        if (data && Array.isArray(data.items)) return normalizeItemsV2(data.items);
+        return [];
+      }
+
+      function persistStateV2() {
+        state.items = normalizeItemsV2(state.items || []);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+      }
+
+      function updateStatsV2() {
+        const visibleItems = visibleItemsV2();
+        const stats = document.querySelector(".stats");
+        const openCount = visibleItems.filter(i => !i.bought).length;
+        const doneCount = visibleItems.filter(i => i.bought).length;
+        document.getElementById("stats-open").textContent = openCount;
+        document.getElementById("stats-done").textContent = doneCount;
+        if (stats) {
+          stats.style.display = visibleItems.length ? "flex" : "none";
+        }
+      }
+
+      function renderV2() {
+        const cont = document.getElementById("list-scroll");
+        const empty = document.getElementById("empty-state");
+        const visibleItems = visibleItemsV2();
+        cont.innerHTML = "";
+
+        if (!visibleItems.length) {
+          cont.appendChild(empty);
+          updateStatsV2();
+          return;
+        }
+
+        const open = visibleItems.filter(i => !i.bought);
+        const done = visibleItems.filter(i => i.bought);
+
+        function renderGroup(titleText, className, items) {
+          if (!items.length) return;
+          const title = document.createElement("div");
+          title.className = className;
+          title.innerHTML = "<span class='dot'></span><span>" + titleText + "</span>";
+          cont.appendChild(title);
+          items.forEach(item => cont.appendChild(renderItemV2(item)));
+        }
+
+        renderGroup("Kupit", "group-title", open);
+        renderGroup("Kupene", "group-title done", done);
+        updateStatsV2();
+      }
+
+      function renderItemV2(it) {
+        const card = document.createElement("div");
+        card.className = "item" + (it.bought ? " bought" : "");
+
+        const check = document.createElement("div");
+        check.className = "check";
+        check.innerHTML = "<span>\u2714</span>";
+        check.addEventListener("click", e => {
+          e.stopPropagation();
+          toggleBoughtV2(it.id);
+        });
+
+        const main = document.createElement("div");
+        main.className = "item-main";
+
+        const row = document.createElement("div");
+        row.className = "item-title-row";
+        const name = document.createElement("div");
+        name.className = "item-name";
+        name.textContent = it.name;
+        row.appendChild(name);
+
+        const meta = document.createElement("div");
+        meta.className = "item-meta-row";
+        if (it.bought && it.boughtAt) {
+          const t = document.createElement("div");
+          t.className = "time-pill";
+          t.textContent = formatDate(it.boughtAt);
+          meta.appendChild(t);
+        }
+
+        main.appendChild(row);
+        main.appendChild(meta);
+
+        const actions = document.createElement("div");
+        actions.className = "item-actions";
+        const del = document.createElement("button");
+        del.className = "btn-mini delete";
+        del.innerHTML = "<span>\u{1F5D1}\uFE0F</span>";
+        del.addEventListener("click", e => {
+          e.stopPropagation();
+          deleteSingleV2(it.id);
+        });
+        actions.appendChild(del);
+
+        card.appendChild(check);
+        card.appendChild(main);
+        card.appendChild(actions);
+        return card;
+      }
+
+      function saveAndRenderV2() {
+        persistStateV2();
+        renderV2();
+      }
+
+      function addItemV2(name) {
+        const n = (name || "").trim();
+        if (!n) {
+          showToast("Napis, co treba kupit.", "\u{1F4DD}");
+          return;
+        }
+
+        state.items.unshift({
+          id: uid(),
+          name: n,
+          qty: "",
+          bought: false,
+          boughtAt: null,
+          updatedAt: nowIso(),
+          deleted: false
+        });
+        saveAndRenderV2();
+        scheduleAutoSync();
+        showToast("Pridane do zoznamu.", "\u{1F6D2}");
+      }
+
+      function toggleBoughtV2(id) {
+        const it = state.items.find(item => item.id === id);
+        if (!it || it.deleted) return;
+        it.bought = !it.bought;
+        it.boughtAt = it.bought ? nowIso() : null;
+        it.updatedAt = nowIso();
+        saveAndRenderV2();
+        scheduleAutoSync();
+        showToast(it.bought ? "Oznacene ako kupene." : "Vratene medzi polozky na kupu.", it.bought ? "\u2705" : "\u21A9\uFE0F");
+      }
+
+      function deleteSingleV2(id) {
+        const it = state.items.find(item => item.id === id);
+        if (!it || it.deleted) return;
+        const name = it.name;
+        it.deleted = true;
+        it.updatedAt = nowIso();
+        saveAndRenderV2();
+        scheduleAutoSync();
+        showToast("Vymazane: " + name, "\u{1F5D1}\uFE0F");
+      }
+
+      function deleteCheckedV2() {
+        const itemsToDelete = state.items.filter(item => item.bought && !item.deleted);
+        if (!itemsToDelete.length) {
+          showToast("Nie je co vymazat.", "\u{1F937}");
+          return;
+        }
+        if (!confirm("Vymazat vsetky kupene polozky?")) return;
+
+        const deletedAt = nowIso();
+        itemsToDelete.forEach(item => {
+          item.deleted = true;
+          item.updatedAt = deletedAt;
+        });
+        saveAndRenderV2();
+        scheduleAutoSync();
+        showToast("Kupene polozky vymazane.", "\u{1F5D1}\uFE0F");
+      }
+
+      function markAllBoughtV2() {
+        const items = (state.items || []).filter(item => item && !item.deleted);
+        if (!items.length) {
+          showToast("Zoznam je prazdny.", "\u{1F9FA}");
+          return;
+        }
+        const timestamp = nowIso();
+        items.forEach(item => {
+          item.bought = true;
+          item.boughtAt = timestamp;
+          item.updatedAt = timestamp;
+        });
+        saveAndRenderV2();
+        scheduleAutoSync();
+        showToast("Vsetko oznacene ako kupene.", "\u2705");
+      }
+
+      function fetchSheetsSnapshotV2(forceRefresh) {
+        if (!forceRefresh && lastRemoteSnapshotV2.length && Date.now() - lastRemoteFetchedAtV2 < REMOTE_CACHE_TTL_MS) {
+          return Promise.resolve(lastRemoteSnapshotV2);
+        }
+
+        const attempts = [
+          () => fetch(SHEETS_SYNC_URL + "?action=get", { method: "GET" }),
+          () => fetch(SHEETS_SYNC_URL + "?action=load", { method: "GET" }),
+          () => fetch(SHEETS_SYNC_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "get" })
+          })
+        ];
+
+        let index = 0;
+        function next() {
+          if (index >= attempts.length) return Promise.resolve([]);
+          return attempts[index++]()
+            .then(response => response.json().catch(() => ({})))
+            .then(data => {
+              const items = parseSyncItemsV2(data);
+              if (items.length || index >= attempts.length) {
+                lastRemoteSnapshotV2 = items;
+                lastRemoteFetchedAtV2 = Date.now();
+                return items;
+              }
+              return next();
+            })
+            .catch(() => next());
+        }
+
+        return next();
+      }
+
+      function syncToSheetsV2(showFeedback) {
+        if (isSyncInProgress) {
+          pendingSyncAfterCurrentV2 = true;
+          return;
+        }
+        isSyncInProgress = true;
+        pendingSyncAfterCurrentV2 = false;
+        clearTimeout(autoSyncTimer);
+
+        const pill = document.getElementById("sync-pill");
+        const text = document.getElementById("sync-status-text");
+        if (pill) {
+          pill.classList.add("loading");
+          pill.classList.remove("synced");
+        }
+        if (text) text.textContent = "Sync: prebieha...";
+
+        fetchSheetsSnapshotV2(Boolean(showFeedback))
+          .then(remoteItems => {
+            const mergedItems = mergeItemsV2(state.items || [], remoteItems || []);
+            return fetch(SHEETS_SYNC_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: "sync", items: mergedItems })
+            })
+              .then(response => response.json().catch(() => ({})))
+              .then(data => {
+                const parsed = parseSyncItemsV2(data);
+                const finalItems = parsed.length ? parsed : mergedItems;
+                lastRemoteSnapshotV2 = finalItems;
+                lastRemoteFetchedAtV2 = Date.now();
+                return finalItems;
+              });
+          })
+          .then(items => {
+            state.items = mergeItemsV2(state.items || [], items || []);
+            saveAndRenderV2();
+            exportSyncTimestampSuccess(Boolean(showFeedback));
+            if (pill) {
+              pill.classList.remove("loading");
+              pill.classList.add("synced");
+            }
+            if (text) text.textContent = "Sync: hotovo";
+            if (showFeedback) showToast("Sync so Sheets hotovy.", "\u2705");
+          })
+          .catch(error => {
+            console.error(error);
+            const hasVisibleItems = visibleItemsV2().length > 0;
+            if (!hasVisibleItems) {
+              exportSyncTimestampSuccess(false);
+              if (pill) {
+                pill.classList.remove("loading");
+                pill.classList.add("synced");
+              }
+              if (text) text.textContent = "Sync: hotovo";
+              if (showFeedback) showToast("Zoznam je vymazany a ulozeny.", "\u2705");
+              return;
+            }
+            if (pill) pill.classList.remove("loading");
+            if (showFeedback) {
+              if (pill) pill.classList.remove("synced");
+              if (text) text.textContent = "Sync: chyba";
+              showToast("Sync zlyhal. Skus neskor.", "\u26A0\uFE0F");
+            } else {
+              if (text && localStorage.getItem(SYNC_KEY)) {
+                text.textContent = "Sync: pred chvilou";
+              }
+            }
+          })
+          .finally(() => {
+            isSyncInProgress = false;
+            if (pendingSyncAfterCurrentV2) {
+              pendingSyncAfterCurrentV2 = false;
+              clearTimeout(autoSyncTimer);
+              autoSyncTimer = setTimeout(() => syncToSheetsV2(false), 50);
+            }
+          });
+      }
+
+      function scheduleAutoSyncV2() {
+        if (!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE") return;
+        clearTimeout(autoSyncTimer);
+        autoSyncTimer = setTimeout(() => syncToSheetsV2(false), AUTO_SYNC_DELAY_V2);
+      }
+
+      function replaceNodeWithHandler(id, handler) {
+        const element = document.getElementById(id);
+        if (!element) return null;
+        const replacement = element.cloneNode(true);
+        element.replaceWith(replacement);
+        replacement.addEventListener("click", handler);
+        return replacement;
+      }
+
+      function bootFinalSyncLayer() {
+        state.items = normalizeItemsV2(state.items || []);
+
+        const statsNode = document.querySelector(".stats");
+        if (statsNode) {
+          statsNode.remove();
+        }
+
+        addItem = addItemV2;
+        toggleBought = toggleBoughtV2;
+        deleteSingle = deleteSingleV2;
+        deleteChecked = deleteCheckedV2;
+        markAllBought = markAllBoughtV2;
+        syncToSheets = syncToSheetsV2;
+        scheduleAutoSync = scheduleAutoSyncV2;
+        render = renderV2;
+        saveState = persistStateV2;
+        updateStats = function () { return; };
+        updateStatsV2 = function () { return; };
+
+        renderV2();
+
+        const qtyInput = document.getElementById("input-qty");
+        if (qtyInput) {
+          qtyInput.remove();
+        }
+
+        const nameInput = document.getElementById("input-name");
+        if (nameInput) {
+          nameInput.placeholder = "Co treba kupit?";
+          nameInput.style.flex = "1 1 auto";
+          nameInput.style.width = "100%";
+        }
+
+        replaceNodeWithHandler("btn-add", event => {
+          event.preventDefault();
+          const input = document.getElementById("input-name");
+          addItemV2(input ? input.value : "");
+          if (input) {
+            input.value = "";
+            input.focus();
+          }
+        });
+
+        if (nameInput) {
+          const replacement = nameInput.cloneNode(true);
+          nameInput.replaceWith(replacement);
+          replacement.addEventListener("keydown", event => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            addItemV2(replacement.value);
+            replacement.value = "";
+            replacement.focus();
+          });
+        }
+
+        fetchSheetsSnapshotV2(true)
+          .then(remoteItems => {
+            state.items = mergeItemsV2(state.items || [], remoteItems || []);
+            saveAndRenderV2();
+          })
+          .catch(() => {});
+
+        replaceNodeWithHandler("btn-sync", () => syncToSheetsV2(true));
+        replaceNodeWithHandler("btn-mark-all-bottom", markAllBoughtV2);
+        replaceNodeWithHandler("btn-clear-checked", deleteCheckedV2);
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootFinalSyncLayer);
+      } else {
+        bootFinalSyncLayer();
       }
     })();
   </script>

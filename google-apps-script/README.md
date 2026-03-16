@@ -28,8 +28,15 @@
 {
   "id": "abc",
   "name": "Mlieko",
-  "qty": "2",
+  "qty": "",
   "bought": false,
-  "boughtAt": null
+  "boughtAt": null,
+  "updatedAt": "2026-03-16T10:00:00.000Z",
+  "deleted": false
 }
 ```
+
+## Poznamka
+
+- Hlavny harok `NakupnyZoznam` obsahuje len aktivne polozky.
+- Zmazane polozky sa drzia v skrytom harku `NakupnyZoznam_deleted`, aby fungoval sync medzi zariadeniami.
