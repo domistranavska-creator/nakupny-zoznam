@@ -1,4 +1,4 @@
-const CACHE_NAME = "nakupny-zoznam-runtime";
+const CACHE_NAME = "nakupny-zoznam-runtime-v2026-06-10";
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",

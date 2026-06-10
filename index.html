@@ -2,3076 +2,1279 @@
 <html lang="sk">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="manifest.json" />
-  <title>Nákupný zoznam · Neon hologram + Sheets sync</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Google fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-
+  <title>Nakupny zoznam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
-    :root{
-      --accent-pink:#ff6fb5;
-      --accent-pink-strong:#ff3fa2;
-      --accent-lilac:#a855f7;
-      --accent-blue:#38bdf8;
-      --accent-mint:#22c55e;
-      --text-main:#020617;
-      --text-muted:#6b7280;
+    :root {
+      --bg-1: #7c3aed;
+      --bg-2: #38bdf8;
+      --bg-3: #f472b6;
+      --panel: rgba(255, 255, 255, 0.9);
+      --panel-strong: rgba(255, 255, 255, 0.97);
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(148, 163, 184, 0.22);
+      --shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
+      --accent: #0ea5e9;
+      --accent-strong: #0284c7;
+      --success: #16a34a;
+      --danger: #ef4444;
+      --chip: rgba(226, 232, 240, 0.88);
     }
 
-    *{
-      box-sizing:border-box;
-      -webkit-tap-highlight-color:transparent;
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    body{
-      margin:0;
-      min-height:100vh;
-      font-family:"Nunito",system-ui,sans-serif;
-      display:flex;
-      justify-content:center;
-      padding:20px 12px;
-      color:var(--text-main);
-      /* HOLOGRAMOVÉ DÚHOVÉ POZADIE – statické, bez točenia */
+    html, body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: "Nunito", system-ui, sans-serif;
+      color: var(--text);
       background:
-        radial-gradient(circle at 0% 0%, rgba(244,114,182,0.95), transparent 55%),
-        radial-gradient(circle at 12% 100%, rgba(56,189,248,0.95), transparent 55%),
-        radial-gradient(circle at 88% 0%, rgba(250,204,21,0.9), transparent 55%),
-        radial-gradient(circle at 100% 100%, rgba(168,85,247,0.98), transparent 55%),
-        radial-gradient(circle at 50% 35%, rgba(34,197,94,0.85), transparent 60%),
-        linear-gradient(135deg, #020617, #020617 35%, #020617 70%, #020617 100%);
-      background-size:150% 150%;
-      background-attachment:fixed;
-      transition:background .3s,color .3s;
-    }
-
-    body.theme-dark{
-      color:#e5e7eb;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(30,64,175,1), transparent 55%),
-        radial-gradient(circle at 100% 0%, rgba(56,189,248,0.9), transparent 55%),
-        radial-gradient(circle at 0% 100%, rgba(22,163,74,0.85), transparent 55%),
-        radial-gradient(circle at 100% 100%, rgba(168,85,247,1), transparent 55%),
-        linear-gradient(135deg,#020617,#020617 40%,#020617 100%);
-      background-size:150% 150%;
-      background-attachment:fixed;
-    }
-
-    .shell{
-      width:100%;
-      max-width:520px;
-      transform-origin:center;
-    }
-
-    .card{
-      position:relative;
-      border-radius:26px;
-      padding:14px 14px 10px;
-      background:radial-gradient(circle at top,#fdfcff,#f9fafb);
-      overflow:hidden;
-    }
-
-    body.theme-dark .card{
-      background:radial-gradient(circle at top,#020617,#020617 45%,#020617 100%);
-    }
-
-    .card::before{
-      content:"";
-      position:absolute;
-      inset:-1px;
-      padding:1px;
-      border-radius:27px;
-      background:conic-gradient(
-        from 220deg,
-        rgba(244,114,182,1),
-        rgba(56,189,248,1),
-        rgba(45,212,191,1),
-        rgba(250,204,21,1),
-        rgba(168,85,247,1),
-        rgba(244,114,182,1)
-      );
-      -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-      -webkit-mask-composite:xor;
-              mask-composite:exclude;
-      pointer-events:none;
-      opacity:.95;
-    }
-
-    .header-panel{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:14px;
-      padding:12px 18px 14px;
-      border-radius:22px;
-      background:
-        radial-gradient(circle at 0 0,rgba(255,255,255,.98),transparent 60%),
-        linear-gradient(135deg,#fee2f8,#e0f2fe,#dcfce7);
-      box-shadow:
-        0 20px 45px rgba(15,23,42,.7),
-        0 0 32px rgba(244,114,182,.9);
-      margin-bottom:10px;
-      position:relative;
-      overflow:hidden;
-    }
-
-    body.theme-dark .header-panel{
-      background:
-        radial-gradient(circle at 0 0,rgba(15,23,42,1),transparent 60%),
-        linear-gradient(135deg,#020617,#020617,#111827);
-      box-shadow:
-        0 22px 48px rgba(0,0,0,1),
-        0 0 32px rgba(56,189,248,1);
-    }
-
-    .logo-orbit{
-      width:68px;height:68px;
-      border-radius:24px;
-      background:radial-gradient(circle at 20% 0%,#ffffff,#ffe0f4);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow:
-        0 18px 36px rgba(244,114,182,1),
-        0 0 22px rgba(244,114,182,.9);
-      position:relative;
-      z-index:1;
-      overflow:hidden;
-    }
-
-    body.theme-dark .logo-orbit{
-      background:radial-gradient(circle at 20% 0%,#020617,#111827);
-      box-shadow:
-        0 18px 36px rgba(56,189,248,1),
-        0 0 22px rgba(59,130,246,1);
-    }
-
-    .logo-orbit svg{
-      width:50px;
-      height:50px;
-      display:block;
-    }
-
-    .header-text{
-      display:flex;
-      flex-direction:column;
-      gap:3px;
-      align-items:center;
-      text-align:center;
-      position:relative;
-      z-index:1;
-    }
-
-    .title{
-      font-family:"Baloo 2",system-ui,sans-serif;
-      font-size:2.1rem;
-      letter-spacing:.05em;
-      background:linear-gradient(120deg,#020617,#1f2937);
-      -webkit-background-clip:text;
-      color:transparent;
-    }
-
-    body.theme-dark .title{
-      background:linear-gradient(120deg,#f9fafb,#e5e7eb);
-      -webkit-background-clip:text;
-      color:transparent;
-    }
-
-    .stats{
-      font-size:.9rem;
-      color:var(--text-muted);
-      display:flex;
-      gap:8px;
-    }
-
-    body.theme-dark .stats{color:#9ca3af;}
-    .stats strong{color:#ec4899;}
-
-    .theme-toggle{
-      border:none;border-radius:999px;
-      width:34px;height:34px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      background:#020617;
-      color:#f9fafb;
-      box-shadow:
-        0 10px 22px rgba(15,23,42,.9),
-        0 0 14px rgba(59,130,246,.9);
-      cursor:pointer;
-      position:relative;
-      z-index:1;
-      transition:transform .15s ease,box-shadow .15s ease,background .15s ease,color .15s ease;
-    }
-
-    body.theme-dark .theme-toggle{
-      background:#f9fafb;
-      color:#020617;
-      box-shadow:
-        0 8px 18px rgba(15,23,42,.7),
-        0 0 14px rgba(244,114,182,1);
-    }
-
-    .theme-toggle:active{
-      transform:scale(.9) translateY(1px);
-      box-shadow:0 3px 7px rgba(15,23,42,.6);
-    }
-
-    .sync-bar{margin:6px 0 8px;}
-
-    .sync-inner{
-      border-radius:999px;
-      padding:6px 11px;
-      background:linear-gradient(120deg,rgba(255,255,255,.85),rgba(248,250,252,.95));
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border:1px solid rgba(148,163,184,.7);
-      box-shadow:0 12px 26px rgba(15,23,42,.4);
-    }
-
-    body.theme-dark .sync-inner{
-      background:linear-gradient(120deg,rgba(15,23,42,.95),rgba(15,23,42,1));
-      border-color:#1f2937;
-      box-shadow:0 14px 30px rgba(0,0,0,1);
-    }
-
-    .sync-status-pill{
-      display:inline-flex;
-      align-items:center;
-      gap:7px;
-      padding:4px 11px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,.9);
-      background:rgba(248,250,252,.9);
-      font-size:.78rem;
-      color:var(--text-muted);
-      transition:background .2s ease,box-shadow .2s ease,transform .2s ease,color .2s ease,border-color .2s ease;
-    }
-
-    body.theme-dark .sync-status-pill{
-      background:rgba(15,23,42,.95);
-      border-color:#334155;
-      color:#e5e7eb;
-    }
-
-    .sync-status-pill .dot{
-      width:9px;height:9px;border-radius:999px;
-      background:#9ca3af;
-    }
-
-    .sync-status-pill.synced{
-      background:radial-gradient(circle at 0 0,#bbf7d0,#22c55e);
-      color:#064e3b;
-      box-shadow:
-        0 0 0 1px rgba(34,197,94,.7),
-        0 0 20px rgba(34,197,94,1);
-      transform:translateY(-1px);
-      border-color:rgba(22,163,74,1);
-    }
-
-    .sync-status-pill.synced .dot{
-      background:#16a34a;
-      box-shadow:0 0 8px rgba(34,197,94,1);
-    }
-
-    .sync-status-pill.saving{
-      background:radial-gradient(circle at 0 0,#fef3c7,#f59e0b);
-      color:#78350f;
-      border-color:#f59e0b;
-      box-shadow:0 0 0 1px rgba(245,158,11,.45),0 0 16px rgba(245,158,11,.35);
-    }
-
-    .sync-status-pill.saving .dot{
-      background:#f59e0b;
-      box-shadow:0 0 8px rgba(245,158,11,.75);
-    }
-
-    .sync-status-pill.error{
-      background:radial-gradient(circle at 0 0,#fee2e2,#ef4444);
-      color:#7f1d1d;
-      border-color:#ef4444;
-      box-shadow:0 0 0 1px rgba(239,68,68,.45),0 0 16px rgba(239,68,68,.35);
-    }
-
-    .sync-status-pill.error .dot{
-      background:#ef4444;
-      box-shadow:0 0 8px rgba(239,68,68,.75);
-    }
-
-    .sync-status-pill.loading .dot{
-      background:#facc15;
-    }
-
-    .sync-actions{display:flex;align-items:center;gap:6px;}
-
-    .btn-mini{
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,.9);
-      background:radial-gradient(circle at 0 0,#ffffff,#e0ecff);
-      padding:4px 11px;
-      font-size:.8rem;
-      display:inline-flex;
-      align-items:center;
-      gap:5px;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(15,23,42,.55);
-      transition:transform .15s ease,box-shadow .15s ease,background .15s ease,border-color .15s ease;
-    }
-
-    body.theme-dark .btn-mini{
-      background:radial-gradient(circle at 0 0,#020617,#1e293b);
-      border-color:#64748b;
-      color:#e5e7eb;
-      box-shadow:0 8px 20px rgba(0,0,0,1);
-    }
-
-    .btn-mini:active{
-      transform:scale(.94) translateY(1px);
-      box-shadow:0 3px 7px rgba(15,23,42,.65);
-    }
-
-    .btn-mini[disabled]{
-      opacity:.35;
-      pointer-events:none;
-      box-shadow:none;
-    }
-
-    .add-card{
-      border-radius:20px;
-      background:radial-gradient(circle at 0 0,#ffffff,#f9fafb);
-      border:1px solid rgba(226,232,240,1);
-      padding:8px;
-      margin-bottom:8px;
-      box-shadow:0 14px 30px rgba(15,23,42,.3);
-    }
-
-    body.theme-dark .add-card{
-      background:#020617;
-      border-color:#1f2937;
-      box-shadow:0 12px 26px rgba(0,0,0,1);
-    }
-
-    .add-row{
-      display:grid;
-      grid-template-columns:minmax(0,2.4fr) .9fr auto;
-      gap:8px;
-    }
-
-    .input-name,.input-qty{
-      border-radius:999px;
-      border:1px solid #d1d5db;
-      padding:11px 13px;
-      font-family:inherit;
-      font-size:1rem;
-      outline:none;
-      transition:border-color .15s ease,box-shadow .15s ease,background .15s ease,transform .15s ease;
-    }
-
-    .input-qty{
-      max-width:90px;
-      text-align:center;
-      padding:9px 10px;
-      font-size:.9rem;
-    }
-
-    body.theme-dark .input-name,
-    body.theme-dark .input-qty{
-      background:#020617;
-      color:#e5e7eb;
-      border-color:#4b5563;
-    }
-
-    .input-name::placeholder,.input-qty::placeholder{
-      color:#9ca3af;
-    }
-
-    .input-name:focus,.input-qty:focus{
-      border-color:var(--accent-pink-strong);
-      box-shadow:0 0 0 1px rgba(248,113,190,.8),0 0 18px rgba(248,113,190,.6);
-      background:#ffffff;
-      transform:translateY(-1px);
-    }
-
-    body.theme-dark .input-name:focus,
-    body.theme-dark .input-qty:focus{
-      background:#020617;
-    }
-
-    .btn-add{
-      border:none;border-radius:999px;
-      padding:10px 14px;
-      background:conic-gradient(
-        from 220deg,
-        #f97316,
-        #fb7185,
-        #ec4899,
-        #a855f7,
-        #38bdf8,
-        #22c55e,
-        #f97316
-      );
-      color:#ffffff;
-      font-size:1.5rem;
-      font-weight:700;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow:
-        0 18px 40px rgba(15,23,42,.9),
-        0 0 22px rgba(248,113,190,1);
-      cursor:pointer;
-      position:relative;
-      overflow:hidden;
-      transition:transform .18s ease,box-shadow .18s ease;
-    }
-
-    .btn-add::after{
-      content:"";
-      position:absolute;
-      inset:3px;
-      border-radius:999px;
-      background:radial-gradient(circle at 30% 0%,#ffffff,#ffe4f3);
-      opacity:.98;
-    }
-
-    .btn-add span{
-      position:relative;
-      z-index:1;
-    }
-
-    .btn-add:hover{
-      transform:translateY(-1px) scale(1.03);
-    }
-
-    .btn-add:active{
-      transform:translateY(2px) scale(.95);
-      box-shadow:0 8px 18px rgba(15,23,42,1);
-    }
-
-    .list-wrapper{
-      border-radius:20px;
-      background:
-        radial-gradient(circle at 50% 0%,rgba(129,140,248,.35),rgba(255,255,255,.99) 60%);
-      border:1px solid rgba(226,232,240,1);
-      padding:8px;
-      min-height:260px;
-      max-height:min(600px,65vh);
-      display:flex;
-      flex-direction:column;
-      box-shadow:0 18px 36px rgba(15,23,42,.3);
-      backdrop-filter:blur(18px);
-      -webkit-backdrop-filter:blur(18px);
-    }
-
-    body.theme-dark .list-wrapper{
-      background:
-        radial-gradient(circle at 50% 0%,rgba(59,130,246,.4),rgba(15,23,42,.98) 62%);
-      border-color:#111827;
-      box-shadow:0 18px 40px rgba(0,0,0,1);
-    }
-
-    .list-scroll{
-      flex:1;
-      overflow-y:auto;
-      padding-right:4px;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      scrollbar-width:thin;
-      scrollbar-color:#c4d3ff transparent;
-    }
-
-    .list-scroll::-webkit-scrollbar{width:6px;}
-    .list-scroll::-webkit-scrollbar-thumb{
-      background:#c4d3ff;
-      border-radius:999px;
-    }
-
-    .pull-refresh-indicator{
-      height:0;
-      opacity:0;
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:.78rem;
-      color:var(--text-muted);
-      transition:height .18s ease,opacity .18s ease,color .18s ease;
-    }
-
-    .pull-refresh-indicator.ready{
-      color:#0284c7;
+        radial-gradient(circle at top left, rgba(244, 114, 182, 0.9), transparent 34%),
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.9), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(250, 204, 21, 0.55), transparent 30%),
+        linear-gradient(135deg, #0f172a, #1e1b4b 45%, #164e63);
+      padding: 18px 12px 26px;
     }
 
-    .pull-refresh-indicator.loading{
-      height:42px;
-      opacity:1;
-      color:#0f766e;
+    .app {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
     }
 
-    body.theme-dark .pull-refresh-indicator{
-      color:#9ca3af;
+    .shell {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.9));
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 30px;
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      overflow: hidden;
     }
 
-    body.theme-dark .pull-refresh-indicator.ready{
-      color:#7dd3fc;
+    .header {
+      padding: 22px 20px 10px;
     }
 
-    body.theme-dark .pull-refresh-indicator.loading{
-      color:#99f6e4;
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
     }
 
-    .group-title{
-      margin:3px 6px 1px;
-      font-size:.8rem;
-      color:var(--text-muted);
-      display:flex;
-      align-items:center;
-      gap:7px;
+    .title {
+      margin: 0;
+      font-family: "Baloo 2", system-ui, sans-serif;
+      font-size: 2.05rem;
+      line-height: 1;
+      letter-spacing: 0.03em;
     }
 
-    body.theme-dark .group-title{color:#9ca3af;}
-
-    .group-title .dot{
-      width:9px;height:9px;border-radius:999px;
-      background:linear-gradient(135deg,#38bdf8,#a855f7);
-      box-shadow:0 0 12px rgba(56,189,248,1);
-    }
-
-    .group-title.done .dot{
-      background:linear-gradient(135deg,#22c55e,#bbf7d0);
-      box-shadow:0 0 12px rgba(34,197,94,1);
-    }
-
-    .item{
-      position:relative;
-      display:grid;
-      grid-template-columns:auto minmax(0,1.8fr) auto;
-      gap:12px;
-      align-items:center;
-      padding:11px 11px 10px;
-      border-radius:20px;
-      background:
-        radial-gradient(circle at 0 0,rgba(248,250,252,1),rgba(226,232,255,1));
-      border:1px solid #e5e7eb;
-      box-shadow:0 8px 16px rgba(15,23,42,.2);
-      overflow:hidden;
-      min-height:64px;
-    }
-
-    body.theme-dark .item{
-      background:#020617;
-      border-color:#1f2937;
-      box-shadow:0 10px 20px rgba(0,0,0,1);
-    }
-
-    .item.bought{
-      background:
-        radial-gradient(circle at 0 0,rgba(240,253,250,1),rgba(190,242,205,1));
-      border-color:#22c55e;
-      box-shadow:0 9px 20px rgba(22,163,74,.7);
-    }
-
-    body.theme-dark .item.bought{
-      background:
-        radial-gradient(circle at 0 0,rgba(6,95,70,1),rgba(5,46,32,1));
-      border-color:#16a34a;
-      box-shadow:0 9px 22px rgba(22,163,74,1);
-    }
-
-    .item.remote-new{
-      border-color:#38bdf8;
-      box-shadow:
-        0 0 0 1px rgba(56,189,248,.55),
-        0 0 20px rgba(56,189,248,.5),
-        0 10px 22px rgba(15,23,42,.22);
+    .subtitle {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
     }
 
-    .item.remote-new.remote-mobile{
-      border-color:#fb7185;
-      box-shadow:
-        0 0 0 1px rgba(251,113,133,.5),
-        0 0 20px rgba(251,113,133,.36),
-        0 10px 22px rgba(15,23,42,.22);
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
-    .item.remote-new.remote-desktop{
-      border-color:#38bdf8;
-      box-shadow:
-        0 0 0 1px rgba(56,189,248,.58),
-        0 0 20px rgba(56,189,248,.5),
-        0 10px 22px rgba(15,23,42,.22);
+    .sync-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 4px 20px 0;
     }
 
-    body.theme-dark .item.remote-new{
-      box-shadow:
-        0 0 0 1px rgba(56,189,248,.7),
-        0 0 22px rgba(56,189,248,.45),
-        0 10px 22px rgba(0,0,0,1);
+    .status-pill {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
     }
 
-    body.theme-dark .item.remote-new.remote-mobile{
-      box-shadow:
-        0 0 0 1px rgba(251,113,133,.68),
-        0 0 22px rgba(251,113,133,.38),
-        0 10px 22px rgba(0,0,0,1);
+    .status-pill::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #94a3b8;
+      box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.16);
     }
 
-    body.theme-dark .item.remote-new.remote-desktop{
-      box-shadow:
-        0 0 0 1px rgba(56,189,248,.75),
-        0 0 22px rgba(56,189,248,.45),
-        0 10px 22px rgba(0,0,0,1);
+    .status-pill.loading::before {
+      background: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
     }
 
-    .check{
-      width:32px;height:32px;border-radius:13px;
-      border:2px solid #9ca3af;
-      display:flex;align-items:center;justify-content:center;
-      background:#f9fafb;
-      cursor:pointer;
-      box-shadow:0 4px 9px rgba(15,23,42,.4);
-      transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease;
-      position:relative;
-      z-index:1;
+    .status-pill.synced::before {
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.18);
     }
 
-    body.theme-dark .check{
-      background:#020617;
-      border-color:#9ca3af;
-      box-shadow:0 4px 10px rgba(0,0,0,1);
+    .status-pill.saving::before {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18);
     }
 
-    .check span{
-      font-size:1.4rem;
-      opacity:0;
-      transition:opacity .15s ease,transform .15s ease;
+    .status-pill.error::before {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18);
     }
 
-    .item.bought .check{
-      background:radial-gradient(circle at 30% 0%,#ffffff,#22c55e);
-      border-color:#22c55e;
-      transform:scale(1.06);
-      box-shadow:0 6px 16px rgba(34,197,94,1);
+    .sync-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .item.bought .check span{
-      opacity:1;
-      transform:scale(1.02);
+    .btn,
+    .btn-small,
+    .btn-text,
+    .item-delete {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font: inherit;
     }
 
-    .item-main{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      min-width:0;
-      position:relative;
-      z-index:1;
+    .btn,
+    .btn-small {
+      min-height: 40px;
+      padding: 0 15px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.18);
     }
 
-    .item-title-row{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      min-width:0;
+    .btn.alt {
+      background: linear-gradient(135deg, #475569, #334155);
+      box-shadow: 0 10px 22px rgba(51, 65, 85, 0.14);
     }
 
-    .item-name{
-      font-size:1.1rem;
-      font-weight:700;
-      word-break:break-word;
-      color:#020617;
+    .btn-soft {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      color: var(--text);
+      box-shadow: none;
     }
 
-    body.theme-dark .item-name{color:#e5e7eb;}
-
-    .item.bought .item-name{
-      text-decoration:line-through;
-      text-decoration-thickness:2px;
-      text-decoration-color:rgba(15,23,42,.4);
-      color:#166534;
-    }
-
-    body.theme-dark .item.bought .item-name{
-      text-decoration-color:#022c22;
-      color:#bbf7d0;
-    }
-
-    .qty-pill{
-      font-size:.85rem;
-      padding:3px 9px;
-      border-radius:999px;
-      background:rgba(148,163,184,.25);
-      font-weight:600;
-      color:#0f172a;
-    }
-
-    body.theme-dark .qty-pill{
-      background:rgba(15,23,42,.85);
-      color:#e5e7eb;
-      border:1px solid #1d4ed8;
-    }
-
-    .item-meta-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-      font-size:.78rem;
-      color:var(--text-muted);
+    .btn:active,
+    .btn-small:active,
+    .item-delete:active,
+    .btn-text:active {
+      transform: translateY(1px) scale(0.98);
     }
 
-    body.theme-dark .item-meta-row{color:#9ca3af;}
-
-    .time-pill{
-      padding:2px 8px;
-      border-radius:999px;
-      background:rgba(148,163,184,.16);
+    .device-button {
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--text);
+      box-shadow: none;
     }
 
-    body.theme-dark .time-pill{
-      background:rgba(15,23,42,.95);
-      border:1px solid #4b5563;
+    .add-card,
+    .toolbar {
+      padding: 12px 20px 0;
     }
 
-    .item-actions{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      align-items:flex-end;
-      position:relative;
-      z-index:1;
+    .add-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: stretch;
     }
 
-    .item.dragging{
-      z-index:999;
-      box-shadow:
-        0 24px 44px rgba(15,23,42,.34),
-        0 0 0 1px rgba(56,189,248,.35);
-      cursor:grabbing;
-      opacity:.98;
-      transform:scale(1.01);
+    .input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(203, 213, 225, 0.72);
+      border-radius: 18px;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
     }
 
-    .drag-placeholder{
-      min-height:64px;
-      border-radius:20px;
-      border:2px dashed rgba(56,189,248,.55);
-      background:rgba(191,219,254,.18);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
+    .input:focus {
+      outline: 2px solid rgba(14, 165, 233, 0.18);
+      border-color: var(--accent);
     }
 
-    body.theme-dark .drag-placeholder{
-      background:rgba(30,41,59,.72);
-      border-color:rgba(125,211,252,.65);
-      box-shadow:inset 0 0 0 1px rgba(148,163,184,.18);
+    .toolbar-grid {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
-    body.drag-active,
-    body.drag-active *{
-      user-select:none;
+    .btn-small {
+      min-height: 36px;
+      padding: 0 14px;
+      font-size: 0.84rem;
     }
 
-    .btn-mini.delete{
-      border-color:#fda4af;
-      background:radial-gradient(circle at 0 0,#fff1f2,#fecaca);
-      box-shadow:0 6px 14px rgba(248,113,190,.8);
+    .btn-text {
+      background: transparent;
+      color: var(--danger);
+      text-decoration: underline;
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 4px 0;
     }
 
-    body.theme-dark .btn-mini.delete{
-      background:radial-gradient(circle at 0 0,#450a0a,#7f1d1d);
-      border-color:#fecaca;
-      box-shadow:0 8px 18px rgba(127,29,29,1);
+    .list-wrapper {
+      padding: 2px 20px 20px;
     }
 
-    .time-pill.remote-pill{
-      background:rgba(56,189,248,.15);
-      border:1px solid rgba(56,189,248,.4);
-      color:#075985;
+    .pull-indicator {
+      height: 0;
+      opacity: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      transition: height 0.18s ease, opacity 0.18s ease;
     }
 
-    .time-pill.remote-pill.mobile{
-      background:rgba(251,113,133,.14);
-      border-color:rgba(251,113,133,.38);
-      color:#9f1239;
+    .pull-indicator.active {
+      height: 42px;
+      opacity: 1;
     }
 
-    .time-pill.remote-pill.desktop{
-      background:rgba(56,189,248,.15);
-      border-color:rgba(56,189,248,.4);
-      color:#075985;
+    .list {
+      min-height: 300px;
+      max-height: min(66vh, 720px);
+      overflow-y: auto;
+      padding: 0 1px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overscroll-behavior-y: contain;
     }
 
-    body.theme-dark .time-pill.remote-pill{
-      background:rgba(2,132,199,.22);
-      border-color:rgba(56,189,248,.55);
-      color:#bae6fd;
+    .list::-webkit-scrollbar {
+      width: 6px;
     }
 
-    body.theme-dark .time-pill.remote-pill.mobile{
-      background:rgba(190,24,93,.22);
-      border-color:rgba(251,113,133,.5);
-      color:#fecdd3;
+    .list::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.6);
+      border-radius: 999px;
     }
 
-    body.theme-dark .time-pill.remote-pill.desktop{
-      background:rgba(2,132,199,.22);
-      border-color:rgba(56,189,248,.55);
-      color:#bae6fd;
+    .group-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 4px 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
-    .empty-state{
-      flex:1;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      font-size:.9rem;
-      color:var(--text-muted);
-      padding:18px 10px;
+    .group-title::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
     }
-
-    body.theme-dark .empty-state{color:#9ca3af;}
 
-    .empty-emoji{
-      font-size:2.6rem;
-      margin-bottom:6px;
+    .group-title.done::before {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
     }
 
-    .empty-icons{
-      font-size:1.4rem;
-      display:flex;
-      gap:6px;
-      margin-bottom:4px;
+    .item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 14px 14px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 0.82);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+      cursor: pointer;
     }
 
-    .footer{
-      margin-top:6px;
-      padding-top:6px;
-      border-top:1px solid rgba(226,232,240,1);
-      font-size:.78rem;
-      color:var(--text-muted);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:6px;
-      text-align:center;
+    .item.bought {
+      background: linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(220, 252, 231, 0.98));
+      border-color: rgba(134, 239, 172, 0.95);
     }
 
-    body.theme-dark .footer{
-      border-top-color:#1f2937;
-      color:#9ca3af;
+    .item-check {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      border: 2px solid rgba(148, 163, 184, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 900;
+      color: transparent;
+      background: rgba(255, 255, 255, 0.88);
+      flex-shrink: 0;
     }
 
-    .footer-right{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      justify-content:center;
+    .item.bought .item-check {
+      color: #fff;
+      border-color: var(--success);
+      background: linear-gradient(135deg, #22c55e, #16a34a);
     }
 
-    .btn-text{
-      border:none;
-      background:transparent;
-      font-size:.8rem;
-      color:#fb7185;
-      text-decoration:underline;
-      cursor:pointer;
-      transition:color .15s ease,transform .15s ease;
+    .item-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .btn-text:active{
-      transform:translateY(1px) scale(.97);
+    .item-name {
+      font-size: 1.05rem;
+      font-weight: 800;
+      word-break: break-word;
     }
-
-    body.theme-dark .btn-text{color:#fecaca;}
-
-    .toast{
-      position:fixed;
-      left:50%;
-      bottom:16px;
-      transform:translateX(-50%) translateY(120%);
-      padding:7px 11px;
-      border-radius:999px;
-      background:rgba(15,23,42,.96);
-      color:#ffffff;
-      font-size:.8rem;
-      display:flex;
-      gap:6px;
-      align-items:center;
-      box-shadow:0 14px 28px rgba(15,23,42,1);
-      opacity:0;
-      transition:transform .24s ease-out,opacity .22s ease-out;
-      z-index:50;
+
+    .item.bought .item-name {
+      text-decoration: line-through;
+      color: #166534;
+    }
+
+    .item-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
-    .toast.show{
-      transform:translateX(-50%) translateY(0);
-      opacity:1;
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .chip.source {
+      background: rgba(224, 242, 254, 0.98);
+      color: #075985;
+    }
+
+    .item-delete {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(254, 226, 226, 0.8);
+      color: #b91c1c;
+      font-size: 0.84rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .empty {
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.56);
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      border-radius: 24px;
+      padding: 22px;
+    }
+
+    .empty-title {
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(120%);
+      opacity: 0;
+      background: rgba(15, 23, 42, 0.96);
+      color: #fff;
+      padding: 11px 14px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.28);
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      z-index: 50;
+      max-width: calc(100vw - 28px);
+      text-align: center;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 12px 10px 18px;
+      }
+
+      .header-row,
+      .sync-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header-actions,
+      .sync-actions {
+        justify-content: stretch;
+      }
+
+      .header-actions > *,
+      .sync-actions > * {
+        width: 100%;
+      }
+
+      .add-form {
+        grid-template-columns: 1fr;
+      }
+
+      .btn,
+      .btn-small,
+      .device-button {
+        width: 100%;
+      }
     }
   </style>
 </head>
-<body class="theme-light">
-  <div class="shell">
-    <div class="card">
-      <header>
-        <div class="header-panel">
-          <div class="logo-orbit">
-            <svg viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="cartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#f97316"/>
-                  <stop offset="30%" stop-color="#fb7185"/>
-                  <stop offset="60%" stop-color="#ec4899"/>
-                  <stop offset="85%" stop-color="#a855f7"/>
-                  <stop offset="100%" stop-color="#38bdf8"/>
-                </linearGradient>
-              </defs>
-              <rect x="6" y="6" width="52" height="52" rx="16" ry="16"
-                    fill="url(#cartGrad)" opacity="0.95"/>
-              <path d="M18 20h4l4 18h18l4-12H28"
-                    fill="none"
-                    stroke="#ffffff"
-                    stroke-width="2.4"
-                    stroke-linecap="round"
-                    stroke-linejoin="round" />
-              <circle cx="30" cy="42.5" r="2.8" fill="#ffffff"/>
-              <circle cx="42" cy="42.5" r="2.8" fill="#ffffff"/>
-            </svg>
+<body>
+  <div class="app">
+    <div class="shell">
+      <header class="header">
+        <div class="header-row">
+          <div>
+            <h1 class="title">Nakupny zoznam</h1>
+            <div class="subtitle" id="device-summary">Zariadenie nie je nastavene</div>
           </div>
-          <div class="header-text">
-            <div class="title">Nákupný zoznam</div>
-            <div class="stats">
-              <span>Kúpiť: <strong id="stats-open">0</strong></span>
-              <span>·</span>
-              <span>Kúpené: <strong id="stats-done">0</strong></span>
-            </div>
+          <div class="header-actions">
+            <button type="button" class="btn btn-soft device-button" id="btn-device">Zariadenie</button>
           </div>
-          <button id="btn-theme" class="theme-toggle" title="Svetlý / tmavý režim">🌙</button>
         </div>
       </header>
 
       <section class="sync-bar">
-        <div class="sync-inner">
-          <div class="sync-status-pill" id="sync-pill">
-            <span class="dot"></span>
-            <span id="sync-status-text">Sync: offline</span>
-          </div>
-          <div class="sync-actions">
-            <button type="button" class="btn-mini" id="btn-sync">
-              <span class="icon">💾</span><span>Uložiť</span>
-            </button>
-          </div>
+        <div class="status-pill" id="sync-status-pill">
+          <span id="sync-status-text">Pripravene</span>
+        </div>
+        <div class="sync-actions">
+          <button type="button" class="btn btn-soft" id="btn-load">Nacitat</button>
+          <button type="button" class="btn" id="btn-save">Ulozit</button>
         </div>
       </section>
 
       <section class="add-card">
-        <div class="add-row">
-          <input id="input-name" class="input-name" type="text"
-                 placeholder="Čo treba kúpiť? (mlieko, chlieb…)" autocomplete="off" />
-          <input id="input-qty" class="input-qty" type="text"
-                 placeholder="ks" autocomplete="off" />
-          <button id="btn-add" class="btn-add"><span>＋</span></button>
+        <form class="add-form" id="add-form">
+          <input class="input" id="input-name" type="text" autocomplete="off" placeholder="Co treba kupit?" />
+          <button type="submit" class="btn">Pridat</button>
+        </form>
+      </section>
+
+      <section class="toolbar">
+        <div class="toolbar-grid">
+          <button type="button" class="btn-small btn-soft" id="btn-mark-all">Oznacit vsetko</button>
+          <button type="button" class="btn-small btn-soft" id="btn-clear-checked">Vymazat odskrtnute</button>
         </div>
       </section>
 
       <section class="list-wrapper">
-        <div id="pull-refresh" class="pull-refresh-indicator">Potiahni dole pre načítanie</div>
-        <div id="list-scroll" class="list-scroll">
-          <div id="empty-state" class="empty-state">
-            <div class="empty-emoji">🧺</div>
-            <div class="empty-icons">🍞 🥛 🥦 🍎</div>
-            <div>Zoznam je zatiaľ prázdny.</div>
-            <div>Pridaj prvú položku, ktorú treba kúpiť.</div>
-          </div>
-        </div>
+        <div class="pull-indicator" id="pull-indicator">Potiahni dole pre nacitanie</div>
+        <div class="list" id="list"></div>
       </section>
-
-      <footer class="footer">
-        <div class="footer-right">
-          <button type="button" class="btn-text" id="btn-device-name">Zariadenie</button>
-          <button type="button" class="btn-text" id="btn-mark-all-bottom">Odškrtnúť všetko</button>
-          <button type="button" class="btn-text" id="btn-clear-checked">Vymazať odškrtnuté</button>
-        </div>
-      </footer>
     </div>
   </div>
 
-  <div id="toast" class="toast">
-    <span id="toast-icon">✨</span><span id="toast-text"></span>
-  </div>
+  <div class="toast" id="toast"></div>
 
   <script>
     const STORAGE_KEY = "nakupnyZoznam_neonMEGA_items";
-    const THEME_KEY   = "nakupnyZoznam_neonMEGA_theme";
-    const SYNC_KEY    = "nakupnyZoznam_neonMEGA_sync_ts";
-    const AUTO_SYNC_DELAY = 1500;
-
+    const SYNC_KEY = "nakupnyZoznam_neonMEGA_sync_ts";
+    const DEVICE_KEY = "nakupny_zoznam_device_v2";
+    const UNSAVED_KEY = "nakupny_zoznam_unsaved_v2";
+    const PULL_THRESHOLD = 78;
     const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbw260UlklkZ4KEtiTvfHtvRr_z3R1Te5Ne3Foch9e38nBuWaeo1Y9eRY7dLKqONmyquFg/exec";
 
-    let state = { items: [] };
-    let autoSyncTimer = null;
-    let isSyncInProgress = false;
+    const state = {
+      items: [],
+      syncInProgress: false,
+      unsaved: localStorage.getItem(UNSAVED_KEY) === "1",
+      pull: null,
+      toastTimer: null
+    };
 
-    function uid(){
-      return "i_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-    }
+    const device = loadDevice();
 
-    function showToast(msg, icon="✨"){
-      const t = document.getElementById("toast");
-      document.getElementById("toast-text").textContent = msg;
-      document.getElementById("toast-icon").textContent = icon;
-      t.classList.add("show");
-      setTimeout(() => t.classList.remove("show"), 1800);
-    }
-
-    function loadState(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if(raw){
-          const arr = JSON.parse(raw);
-          if(Array.isArray(arr)) state.items = arr;
-        }
-      }catch(e){}
-    }
-
-    function saveState(){
-      try{
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
-      }catch(e){}
-      updateStats();
-    }
-
-    function formatDate(iso){
-      if(!iso) return "";
-      const d = new Date(iso);
-      if(isNaN(d.getTime())) return "";
-      const dd = String(d.getDate()).padStart(2,"0");
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const hh = String(d.getHours()).padStart(2,"0");
-      const mi = String(d.getMinutes()).padStart(2,"0");
-      return dd+"."+mm+". "+hh+":"+mi;
-    }
-
-    function updateStats(){
-      const open = state.items.filter(i=>!i.bought).length;
-      const done = state.items.filter(i=>i.bought).length;
-      document.getElementById("stats-open").textContent = open;
-      document.getElementById("stats-done").textContent = done;
-    }
-
-    function addItem(name, qty){
-      const n = (name||"").trim();
-      const q = (qty||"").trim();
-      if(!n){
-        showToast("Napíš, čo treba kúpiť.","📝");
-        return;
-      }
-      state.items.unshift({id:uid(), name:n, qty:q, bought:false, boughtAt:null});
-      saveState();
-      render();
-      scheduleAutoSync();
-      showToast("Pridané do zoznamu.","🛒");
-    }
-
-    function toggleBought(id){
-      const it = state.items.find(i=>i.id===id);
-      if(!it) return;
-      if(it.bought){
-        it.bought=false; it.boughtAt=null;
-        showToast("Vrátené medzi kúpiť.","↩️");
-      }else{
-        it.bought=true; it.boughtAt=new Date().toISOString();
-        showToast("Odškrtnuté ako kúpené.","✅");
-      }
-      saveState();
-      render();
-      scheduleAutoSync();
-    }
-
-    function deleteSingle(id){
-      const idx = state.items.findIndex(i=>i.id===id);
-      if(idx===-1) return;
-      const name = state.items[idx].name;
-      state.items.splice(idx,1);
-      saveState();
-      render();
-      scheduleAutoSync();
-      showToast("Vymazané: "+name,"🗑️");
-    }
-
-    function deleteChecked(){
-      const hasDone = state.items.some(i=>i.bought);
-      if(!hasDone){
-        showToast("Nie je čo vymazať.","🤷‍♀️");
-        return;
-      }
-      if(!confirm("Vymazať všetky kúpené položky?")) return;
-      state.items = state.items.filter(i=>!i.bought);
-      saveState();
-      render();
-      scheduleAutoSync();
-      showToast("Kúpené položky vymazané.","🗑️");
-    }
-
-    function markAllBought(){
-      if(!state.items.length){
-        showToast("Zoznam je prázdny.","🧺");
-        return;
-      }
-      const now = new Date().toISOString();
-      state.items.forEach(i=>{i.bought=true;i.boughtAt=now;});
-      saveState();
-      render();
-      scheduleAutoSync();
-      showToast("Všetko odškrtnuté ako kúpené.","✅");
-    }
-
-    function exportSyncTimestampSuccess(fromClick){
-      localStorage.setItem(SYNC_KEY, Date.now().toString());
-      updateSyncStatus(fromClick);
-    }
-
-    function scheduleAutoSync(){
-      if(!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE") return;
-      clearTimeout(autoSyncTimer);
-      autoSyncTimer = setTimeout(() => {
-        syncToSheets(false);
-      }, AUTO_SYNC_DELAY);
-    }
-
-    function syncToSheets(showFeedback = true){
-      if(isSyncInProgress) return;
-      isSyncInProgress = true;
-      clearTimeout(autoSyncTimer);
-      const pill = document.getElementById("sync-pill");
-      const text = document.getElementById("sync-status-text");
-      if(pill){
-        pill.classList.add("loading");
-        pill.classList.remove("synced");
-      }
-      if(text) text.textContent = "Sync: prebieha…";
-
-      if(!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE"){
-        isSyncInProgress = false;
-        if(pill){
-          pill.classList.remove("loading","synced");
-        }
-        if(text) text.textContent = "Sync: nenastavený";
-        if(showFeedback) showToast("Najprv vlož URL z Google Apps Script.","ℹ️");
-        return;
+    function uid() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return window.crypto.randomUUID();
       }
 
-      fetch(SHEETS_SYNC_URL,{
-        method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({ action:"sync", items: state.items || [] })
-      })
-      .then(r => r.json())
-      .then(data => {
-        isSyncInProgress = false;
-        if(Array.isArray(data)){
-          state.items = data;
-          saveState();
-          render();
-        }else if(Array.isArray(data.items)){
-          state.items = data.items;
-          saveState();
-          render();
-        }
-        exportSyncTimestampSuccess(showFeedback);
-        if(pill){
-          pill.classList.remove("loading");
-          pill.classList.add("synced");
-        }
-        if(text) text.textContent = "Sync: hotovo";
-        if(showFeedback) showToast("Sync so Sheets hotový 💾","✅");
-      })
-      .catch(err=>{
-        isSyncInProgress = false;
-        console.error(err);
-        if(pill){
-          pill.classList.remove("loading","synced");
-        }
-        if(text) text.textContent = "Sync: chyba";
-        if(showFeedback) showToast("Sync zlyhal. Skús neskôr.","⚠️");
-      });
+      return "id-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
 
-    function updateSyncStatus(fromClick){
-      const pill = document.getElementById("sync-pill");
-      const text = document.getElementById("sync-status-text");
-      const ts = localStorage.getItem(SYNC_KEY);
-      if(!pill || !text) return;
-
-      pill.classList.remove("loading","synced");
-      if(!ts){
-        text.textContent = "Sync: offline";
-        return;
-      }
-      const diff = Date.now() - Number(ts);
-      const minutes = Math.round(diff/60000);
-      pill.classList.add("synced");
-      if(minutes<=1){
-        text.textContent = "Sync: práve teraz";
-      }else if(minutes<60){
-        text.textContent = "Sync: pred "+minutes+" min";
-      }else{
-        const h = Math.round(minutes/60);
-        text.textContent = "Sync: pred "+h+" h";
-      }
-      if(fromClick) showToast("Zoznam je zosúladený.","✅");
+    function nowIso() {
+      return new Date().toISOString();
     }
 
-    function render(){
-      const cont = document.getElementById("list-scroll");
-      const empty = document.getElementById("empty-state");
-      cont.innerHTML = "";
-      if(!state.items.length){
-        cont.appendChild(empty);
-        updateStats();
-        return;
-      }
-
-      const open = state.items.filter(i=>!i.bought);
-      const done = state.items.filter(i=>i.bought);
-
-      if(open.length){
-        const t = document.createElement("div");
-        t.className="group-title";
-        t.innerHTML="<span class='dot'></span><span>Kúpiť</span>";
-        cont.appendChild(t);
-        open.forEach(it=>cont.appendChild(renderItem(it)));
-      }
-      if(done.length){
-        const t2 = document.createElement("div");
-        t2.className="group-title done";
-        t2.innerHTML="<span class='dot'></span><span>Kúpené</span>";
-        cont.appendChild(t2);
-        done.forEach(it=>cont.appendChild(renderItem(it)));
-      }
-      updateStats();
+    function detectDeviceType() {
+      const ua = (navigator.userAgent || "").toLowerCase();
+      return /android|iphone|ipad|ipod|mobile/i.test(ua) ? "mobile" : "desktop";
     }
 
-    function renderItem(it){
-      const card = document.createElement("div");
-      card.className="item"+(it.bought?" bought":"");
-
-      const check = document.createElement("div");
-      check.className="check";
-      check.innerHTML="<span>✔</span>";
-      check.addEventListener("click",e=>{e.stopPropagation();toggleBought(it.id);});
-
-      const main = document.createElement("div");
-      main.className="item-main";
-
-      const row = document.createElement("div");
-      row.className="item-title-row";
-      const name = document.createElement("div");
-      name.className="item-name";
-      name.textContent = it.name;
-      row.appendChild(name);
-      if(it.qty){
-        const q = document.createElement("div");
-        q.className="qty-pill";
-        q.textContent = it.qty;
-        row.appendChild(q);
-      }
-
-      const meta = document.createElement("div");
-      meta.className="item-meta-row";
-      if(it.bought && it.boughtAt){
-        const t = document.createElement("div");
-        t.className = "time-pill";
-        t.textContent = formatDate(it.boughtAt);
-        meta.appendChild(t);
-      }
-
-      main.appendChild(row);
-      main.appendChild(meta);
-
-      const actions = document.createElement("div");
-      actions.className="item-actions";
-      const del = document.createElement("button");
-      del.className="btn-mini delete";
-      del.innerHTML="<span>🗑️</span>";
-      del.addEventListener("click",e=>{e.stopPropagation(); deleteSingle(it.id);});
-      actions.appendChild(del);
-
-      card.appendChild(check);
-      card.appendChild(main);
-      card.appendChild(actions);
-      return card;
+    function defaultDeviceLabel(type) {
+      return type === "mobile" ? "Mobil" : "PC";
     }
 
-    function loadTheme(){
-      const saved = localStorage.getItem(THEME_KEY);
-      const body = document.body;
-      const btn = document.getElementById("btn-theme");
-      if(saved==="dark"){
-        body.classList.remove("theme-light");
-        body.classList.add("theme-dark");
-        btn.textContent="☀️";
-      }else{
-        body.classList.remove("theme-dark");
-        body.classList.add("theme-light");
-        btn.textContent="🌙";
-      }
-    }
+    function loadDevice() {
+      const fallbackType = detectDeviceType();
 
-    function toggleTheme(){
-      const body = document.body;
-      const btn = document.getElementById("btn-theme");
-      if(body.classList.contains("theme-dark")){
-        localStorage.setItem(THEME_KEY,"light");
-        body.classList.remove("theme-dark");
-        body.classList.add("theme-light");
-        btn.textContent="🌙";
-        showToast("Svetlý režim","☀️");
-      }else{
-        localStorage.setItem(THEME_KEY,"dark");
-        body.classList.remove("theme-light");
-        body.classList.add("theme-dark");
-        btn.textContent="☀️";
-        showToast("Tmavý režim","🌙");
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      loadState();
-      loadTheme();
-      updateSyncStatus(false);
-      updateStats();
-      render();
-
-      const nameInput = document.getElementById("input-name");
-      const qtyInput  = document.getElementById("input-qty");
-      const btnAdd    = document.getElementById("btn-add");
-
-      function handleEnter(e){
-        if(e.key==="Enter"){
-          e.preventDefault();
-          addItem(nameInput.value, qtyInput.value);
-          nameInput.value="";
-          qtyInput.value="";
-          nameInput.focus();
-        }
-      }
-
-      btnAdd.addEventListener("click", e=>{
-        e.preventDefault();
-        addItem(nameInput.value, qtyInput.value);
-        nameInput.value="";
-        qtyInput.value="";
-        nameInput.focus();
-      });
-
-      nameInput.addEventListener("keydown", handleEnter);
-      qtyInput.addEventListener("keydown", handleEnter);
-
-      document.getElementById("btn-mark-all-bottom").addEventListener("click", markAllBought);
-      document.getElementById("btn-clear-checked").addEventListener("click", deleteChecked);
-      document.getElementById("btn-sync").addEventListener("click", syncToSheets);
-      document.getElementById("btn-theme").addEventListener("click", toggleTheme);
-    });
-  </script>
-  <script>
-    (function () {
-      function setStaticText() {
-        document.title = "Nakupny zoznam · Neon hologram + Sheets sync";
-
-        const title = document.querySelector(".title");
-        if (title) title.textContent = "Nakupny zoznam";
-
-        const stats = document.querySelector(".stats");
-        if (stats) {
-          stats.innerHTML = '<span>Kupit: <strong id="stats-open">0</strong></span><span> · </span><span>Kupene: <strong id="stats-done">0</strong></span>';
-          if (typeof updateStats === "function") updateStats();
-        }
-
-        const themeButton = document.getElementById("btn-theme");
-        if (themeButton) themeButton.title = "Svetly / tmavy rezim";
-
-        const syncButton = document.getElementById("btn-sync");
-        if (syncButton) syncButton.innerHTML = '<span class="icon">&#128190;</span><span>Ulozit</span>';
-
-        const nameInput = document.getElementById("input-name");
-        if (nameInput) nameInput.placeholder = "Co treba kupit? (mlieko, chlieb...)";
-
-        const emptyState = document.getElementById("empty-state");
-        if (emptyState) {
-          emptyState.innerHTML = [
-            '<div class="empty-emoji">&#129533;</div>',
-            '<div class="empty-icons">&#127838; &#129365; &#129382; &#127822;</div>',
-            '<div>Zoznam je zatial prazdny.</div>',
-            '<div>Pridaj prvu polozku, ktoru treba kupit.</div>'
-          ].join("");
-        }
-
-        const markAllButton = document.getElementById("btn-mark-all-bottom");
-        if (markAllButton) markAllButton.textContent = "Oznacit vsetko";
-
-        const clearCheckedButton = document.getElementById("btn-clear-checked");
-        if (clearCheckedButton) clearCheckedButton.textContent = "Vymazat oznacene";
-      }
-
-      showToast = function (msg, icon) {
-        const toast = document.getElementById("toast");
-        const toastText = document.getElementById("toast-text");
-        const toastIcon = document.getElementById("toast-icon");
-        if (!toast || !toastText || !toastIcon) return;
-        toastText.textContent = msg;
-        toastIcon.textContent = icon || "\u2728";
-        toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 1800);
-      };
-
-      updateStats = function () {
-        const visibleItems = (state.items || []).filter(i => i && !i.deleted);
-        const open = visibleItems.filter(i => !i.bought).length;
-        const done = visibleItems.filter(i => i.bought).length;
-        document.getElementById("stats-open").textContent = open;
-        document.getElementById("stats-done").textContent = done;
-      };
-
-      saveState = function () {
-        try {
-          state.items = normalizeItems(state.items || []);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
-        } catch (e) {}
-        updateStats();
-      };
-
-      render = function () {
-        const cont = document.getElementById("list-scroll");
-        const empty = document.getElementById("empty-state");
-        cont.innerHTML = "";
-        const visibleItems = (state.items || []).filter(i => i && !i.deleted);
-        if (!visibleItems.length) {
-          cont.appendChild(empty);
-          updateStats();
-          return;
-        }
-
-        const open = visibleItems.filter(i => !i.bought);
-        const done = visibleItems.filter(i => i.bought);
-
-        if (open.length) {
-          const t = document.createElement("div");
-          t.className = "group-title";
-          t.innerHTML = "<span class='dot'></span><span>Kupit</span>";
-          cont.appendChild(t);
-          open.forEach(it => cont.appendChild(renderItem(it)));
-        }
-        if (done.length) {
-          const t2 = document.createElement("div");
-          t2.className = "group-title done";
-          t2.innerHTML = "<span class='dot'></span><span>Kupene</span>";
-          cont.appendChild(t2);
-          done.forEach(it => cont.appendChild(renderItem(it)));
-        }
-        updateStats();
-      };
-
-      renderItem = function (it) {
-        const card = document.createElement("div");
-        card.className = "item" + (it.bought ? " bought" : "");
-
-        const check = document.createElement("div");
-        check.className = "check";
-        check.innerHTML = "<span>\u2714</span>";
-        check.addEventListener("click", e => {
-          e.stopPropagation();
-          toggleBought(it.id);
-        });
-
-        const main = document.createElement("div");
-        main.className = "item-main";
-
-        const row = document.createElement("div");
-        row.className = "item-title-row";
-        const name = document.createElement("div");
-        name.className = "item-name";
-        name.textContent = it.name;
-        row.appendChild(name);
-        if (it.qty) {
-          const q = document.createElement("div");
-          q.className = "qty-pill";
-          q.textContent = it.qty;
-          row.appendChild(q);
-        }
-
-        const meta = document.createElement("div");
-        meta.className = "item-meta-row";
-        if (it.bought && it.boughtAt) {
-          const t = document.createElement("div");
-          t.className = "time-pill";
-          t.textContent = formatDate(it.boughtAt);
-          meta.appendChild(t);
-        }
-
-        main.appendChild(row);
-        main.appendChild(meta);
-
-        const actions = document.createElement("div");
-        actions.className = "item-actions";
-        const del = document.createElement("button");
-        del.className = "btn-mini delete";
-        del.innerHTML = "<span>\u{1F5D1}\uFE0F</span>";
-        del.addEventListener("click", e => {
-          e.stopPropagation();
-          deleteSingle(it.id);
-        });
-        actions.appendChild(del);
-
-        card.appendChild(check);
-        card.appendChild(main);
-        card.appendChild(actions);
-        return card;
-      };
-
-      loadTheme = function () {
-        const saved = localStorage.getItem(THEME_KEY);
-        const body = document.body;
-        const btn = document.getElementById("btn-theme");
-        if (saved === "dark") {
-          body.classList.remove("theme-light");
-          body.classList.add("theme-dark");
-          if (btn) btn.textContent = "\u2600\uFE0F";
-        } else {
-          body.classList.remove("theme-dark");
-          body.classList.add("theme-light");
-          if (btn) btn.textContent = "\u{1F319}";
-        }
-      };
-
-      toggleTheme = function () {
-        const body = document.body;
-        const btn = document.getElementById("btn-theme");
-        if (body.classList.contains("theme-dark")) {
-          localStorage.setItem(THEME_KEY, "light");
-          body.classList.remove("theme-dark");
-          body.classList.add("theme-light");
-          if (btn) btn.textContent = "\u{1F319}";
-          showToast("Svetly rezim", "\u2600\uFE0F");
-        } else {
-          localStorage.setItem(THEME_KEY, "dark");
-          body.classList.remove("theme-light");
-          body.classList.add("theme-dark");
-          if (btn) btn.textContent = "\u2600\uFE0F";
-          showToast("Tmavy rezim", "\u{1F319}");
-        }
-      };
-
-      addItem = function (name, qty) {
-        const n = (name || "").trim();
-        const q = (qty || "").trim();
-        if (!n) {
-          showToast("Napis, co treba kupit.", "\u{1F4DD}");
-          return;
-        }
-        state.items.unshift({
+      try {
+        const raw = localStorage.getItem(DEVICE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        const loaded = {
+          id: parsed && parsed.id ? String(parsed.id) : uid(),
+          type: parsed && parsed.type ? String(parsed.type) : fallbackType,
+          label: parsed && parsed.label ? String(parsed.label) : defaultDeviceLabel(fallbackType)
+        };
+        localStorage.setItem(DEVICE_KEY, JSON.stringify(loaded));
+        return loaded;
+      } catch (error) {
+        const loaded = {
           id: uid(),
-          name: n,
-          qty: q,
-          bought: false,
-          boughtAt: null,
-          updatedAt: new Date().toISOString(),
-          deleted: false
-        });
-        saveState();
-        render();
-        scheduleAutoSync();
-        showToast("Pridane do zoznamu.", "\u{1F6D2}");
-      };
-
-      toggleBought = function (id) {
-        const it = state.items.find(i => i.id === id);
-        if (!it) return;
-        if (it.bought) {
-          it.bought = false;
-          it.boughtAt = null;
-          showToast("Vratene medzi polozky na kupu.", "\u21A9\uFE0F");
-        } else {
-          it.bought = true;
-          it.boughtAt = new Date().toISOString();
-          showToast("Oznacene ako kupene.", "\u2705");
-        }
-        it.updatedAt = new Date().toISOString();
-        saveState();
-        render();
-        scheduleAutoSync();
-      };
-
-      deleteSingle = function (id) {
-        const idx = state.items.findIndex(i => i.id === id);
-        if (idx === -1) return;
-        const name = state.items[idx].name;
-        state.items[idx].deleted = true;
-        state.items[idx].updatedAt = new Date().toISOString();
-        saveState();
-        render();
-        scheduleAutoSync();
-        showToast("Vymazane: " + name, "\u{1F5D1}\uFE0F");
-      };
-
-      deleteChecked = function () {
-        const hasDone = state.items.some(i => i.bought && !i.deleted);
-        if (!hasDone) {
-          showToast("Nie je co vymazat.", "\u{1F937}");
-          return;
-        }
-        if (!confirm("Vymazat vsetky kupene polozky?")) return;
-        const deletedAt = new Date().toISOString();
-        state.items.forEach(i => {
-          if (i.bought && !i.deleted) {
-            i.deleted = true;
-            i.updatedAt = deletedAt;
-          }
-        });
-        saveState();
-        render();
-        scheduleAutoSync();
-        showToast("Kupene polozky vymazane.", "\u{1F5D1}\uFE0F");
-      };
-
-      markAllBought = function () {
-        const visibleItems = state.items.filter(i => !i.deleted);
-        if (!visibleItems.length) {
-          showToast("Zoznam je prazdny.", "\u{1F9FA}");
-          return;
-        }
-        const now = new Date().toISOString();
-        visibleItems.forEach(i => {
-          i.bought = true;
-          i.boughtAt = now;
-          i.updatedAt = now;
-        });
-        saveState();
-        render();
-        scheduleAutoSync();
-        showToast("Vsetko oznacene ako kupene.", "\u2705");
-      };
-
-      function normalizeItems(items) {
-        if (!Array.isArray(items)) return [];
-        return items
-          .filter(item => item && typeof item.name === "string" && item.name.trim())
-          .map(item => ({
-            id: typeof item.id === "string" && item.id ? item.id : uid(),
-            name: item.name.trim(),
-            qty: typeof item.qty === "string" ? item.qty.trim() : "",
-            bought: Boolean(item.bought),
-            boughtAt: item.boughtAt || null,
-            updatedAt: item.updatedAt || item.boughtAt || "1970-01-01T00:00:00.000Z",
-            deleted: Boolean(item.deleted)
-          }));
+          type: fallbackType,
+          label: defaultDeviceLabel(fallbackType)
+        };
+        localStorage.setItem(DEVICE_KEY, JSON.stringify(loaded));
+        return loaded;
       }
+    }
 
-      function mergeItems(localItems, remoteItems) {
-        const merged = new Map();
-        [...normalizeItems(remoteItems), ...normalizeItems(localItems)].forEach(item => {
-          const existing = merged.get(item.id);
-          if (!existing) {
-            merged.set(item.id, item);
+    function saveDevice() {
+      localStorage.setItem(DEVICE_KEY, JSON.stringify(device));
+    }
+
+    function loadLocalItems() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return normalizeItems(parsed);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function normalizeItems(items) {
+      if (!Array.isArray(items)) return [];
+
+      const merged = new Map();
+
+      items
+        .filter(item => item && typeof item.name === "string" && item.name.trim())
+        .forEach((item, index) => {
+          const normalized = {
+            id: item.id ? String(item.id) : uid(),
+            name: String(item.name || "").trim(),
+            bought: Boolean(item.bought),
+            boughtAt: item.boughtAt ? String(item.boughtAt) : null,
+            updatedAt: item.updatedAt ? String(item.updatedAt) : (item.boughtAt ? String(item.boughtAt) : "1970-01-01T00:00:00.000Z"),
+            order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
+            deleted: item.deleted === true,
+            updatedById: item.updatedById ? String(item.updatedById) : "",
+            updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
+            updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ""
+          };
+
+          const current = merged.get(normalized.id);
+          if (!current) {
+            merged.set(normalized.id, normalized);
             return;
           }
 
-          const existingTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
-          const itemTime = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
-          if (itemTime >= existingTime) {
-            merged.set(item.id, item);
+          const currentTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
+          const nextTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
+          if (nextTime >= currentTime) {
+            merged.set(normalized.id, normalized);
           }
         });
 
-        return Array.from(merged.values()).sort((a, b) => {
-          const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-          const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-          return bTime - aTime;
-        });
+      return Array.from(merged.values()).sort((a, b) => {
+        if (a.order !== b.order) {
+          return a.order - b.order;
+        }
+
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return bTime - aTime;
+      });
+    }
+
+    function visibleItems() {
+      return normalizeItems(state.items).filter(item => !item.deleted);
+    }
+
+    function persistItems() {
+      state.items = normalizeItems(state.items);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    }
+
+    function stampItem(item, timestamp) {
+      if (!item) return item;
+
+      item.updatedAt = timestamp || nowIso();
+      item.updatedById = device.id;
+      item.updatedByType = device.type;
+      item.updatedByLabel = device.label;
+      return item;
+    }
+
+    function sourceText(item) {
+      if (!item || !item.updatedById || item.updatedById === device.id) {
+        return "";
       }
 
-      function parseSyncResponse(data) {
-        if (Array.isArray(data)) return normalizeItems(data);
-        if (data && Array.isArray(data.items)) return normalizeItems(data.items);
-        return null;
+      if (item.updatedByLabel) {
+        return "Od " + item.updatedByLabel;
       }
 
-      function fetchSheetsSnapshot() {
-        const attempts = [
-          () => fetch(SHEETS_SYNC_URL + "?action=get", { method: "GET" }),
-          () => fetch(SHEETS_SYNC_URL + "?action=load", { method: "GET" }),
-          () => fetch(SHEETS_SYNC_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "get" })
-          }),
-          () => fetch(SHEETS_SYNC_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "load" })
-          })
-        ];
+      return item.updatedByType === "mobile" ? "Z mobilu" : "Z PC";
+    }
 
-        let index = 0;
-        function next() {
-          if (index >= attempts.length) {
-            return Promise.resolve(null);
-          }
+    function formatDate(value) {
+      if (!value) return "";
 
-          const attempt = attempts[index++];
-          return attempt()
-            .then(response => {
-              if (!response.ok) return null;
-              return response.json().catch(() => null);
-            })
-            .then(data => {
-              const items = parseSyncResponse(data);
-              if (items) return items;
-              return next();
-            })
-            .catch(() => next());
-        }
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
 
-        return next();
-      }
+      return date.toLocaleString("sk-SK", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
 
-      syncToSheets = function (showFeedback = true) {
-        if (isSyncInProgress) return;
-        isSyncInProgress = true;
-        clearTimeout(autoSyncTimer);
-        const pill = document.getElementById("sync-pill");
-        const text = document.getElementById("sync-status-text");
-        if (pill) {
-          pill.classList.add("loading");
-          pill.classList.remove("synced");
-        }
-        if (text) text.textContent = "Sync: prebieha...";
-
-        if (!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE") {
-          isSyncInProgress = false;
-          if (pill) pill.classList.remove("loading", "synced");
-          if (text) text.textContent = "Sync: nenastaveny";
-          if (showFeedback) showToast("Najprv vloz URL z Google Apps Script.", "\u2139\uFE0F");
-          return;
-        }
-
-        const localItems = normalizeItems(state.items || []);
-        fetchSheetsSnapshot()
-          .then(remoteItems => {
-            const mergedItems = mergeItems(localItems, remoteItems || []);
-            return fetch(SHEETS_SYNC_URL, {
-              method: "POST",
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify({ action: "sync", items: mergedItems })
-            })
-              .then(r => r.json().catch(() => ({})))
-              .then(data => parseSyncResponse(data) || mergedItems);
-          })
-          .then(items => {
-            isSyncInProgress = false;
-            state.items = normalizeItems(items || []);
-            saveState();
-            render();
-            exportSyncTimestampSuccess(showFeedback);
-            if (pill) {
-              pill.classList.remove("loading");
-              pill.classList.add("synced");
-            }
-            if (text) text.textContent = "Sync: hotovo";
-            if (showFeedback) showToast("Sync so Sheets hotovy.", "\u2705");
-          })
-          .catch(err => {
-            isSyncInProgress = false;
-            console.error(err);
-            if (pill) pill.classList.remove("loading", "synced");
-            if (text) text.textContent = "Sync: chyba";
-            if (showFeedback) showToast("Sync zlyhal. Skus neskor.", "\u26A0\uFE0F");
-          });
-      };
-
-      updateSyncStatus = function (fromClick) {
-        const pill = document.getElementById("sync-pill");
-        const text = document.getElementById("sync-status-text");
-        const ts = localStorage.getItem(SYNC_KEY);
-        if (!pill || !text) return;
-
-        pill.classList.remove("loading", "synced");
-        if (!ts) {
-          text.textContent = "Sync: offline";
-          return;
-        }
-        const diff = Date.now() - Number(ts);
-        const minutes = Math.round(diff / 60000);
-        pill.classList.add("synced");
-        if (minutes <= 1) {
-          text.textContent = "Sync: prave teraz";
-        } else if (minutes < 60) {
-          text.textContent = "Sync: pred " + minutes + " min";
-        } else {
-          text.textContent = "Sync: pred " + Math.round(minutes / 60) + " h";
-        }
-        if (fromClick) showToast("Zoznam je zosuladeny.", "\u2705");
-      };
-
-      function bootFixes() {
-        setStaticText();
-        state.items = normalizeItems(state.items || []);
-        loadTheme();
-        render();
-        updateSyncStatus(false);
-
-        if (!state.items.length && SHEETS_SYNC_URL && SHEETS_SYNC_URL !== "PASTE_WEB_APP_URL_HERE") {
-          fetchSheetsSnapshot().then(remoteItems => {
-            const normalized = normalizeItems(remoteItems);
-            if (!normalized.length) return;
-            state.items = normalized;
-            saveState();
-            render();
-            exportSyncTimestampSuccess(false);
-          }).catch(() => {});
-        }
-
-        if ("serviceWorker" in navigator) {
-          if (!window.__nakupnyZoznamSwReloadHook) {
-            window.__nakupnyZoznamSwReloadHook = true;
-            navigator.serviceWorker.addEventListener("controllerchange", () => {
-              if (window.__nakupnyZoznamSwReloading) return;
-              window.__nakupnyZoznamSwReloading = true;
-              window.location.reload();
-            });
-          }
-
-          navigator.serviceWorker.register("./service-worker.js")
-            .then(registration => {
-              registration.update().catch(() => {});
-              setTimeout(() => registration.update().catch(() => {}), 3000);
-            })
-            .catch(console.error);
-        }
-
-        const syncButton = document.getElementById("btn-sync");
-        if (syncButton) {
-          const replacement = syncButton.cloneNode(true);
-          syncButton.replaceWith(replacement);
-          replacement.addEventListener("click", () => syncToSheets(true));
-        }
-
-        const markAllButton = document.getElementById("btn-mark-all-bottom");
-        if (markAllButton) {
-          const replacement = markAllButton.cloneNode(true);
-          markAllButton.replaceWith(replacement);
-          replacement.addEventListener("click", markAllBought);
-        }
-
-        const clearCheckedButton = document.getElementById("btn-clear-checked");
-        if (clearCheckedButton) {
-          const replacement = clearCheckedButton.cloneNode(true);
-          clearCheckedButton.replaceWith(replacement);
-          replacement.addEventListener("click", deleteChecked);
-        }
-      }
-
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", bootFixes);
+    function setUnsaved(flag) {
+      state.unsaved = Boolean(flag);
+      if (state.unsaved) {
+        localStorage.setItem(UNSAVED_KEY, "1");
       } else {
-        bootFixes();
+        localStorage.removeItem(UNSAVED_KEY);
       }
-    })();
-  </script>
-  <script>
-    (function () {
-      const TOMBSTONE_TS = "1970-01-01T00:00:00.000Z";
-      const REMOTE_CACHE_TTL_MS = 10000;
-      const CARD_DRAG_HOLD_MS = 190;
-      const CARD_DRAG_MOVE_TOLERANCE = 22;
-      const PULL_REFRESH_THRESHOLD_V2 = 72;
-      const DEVICE_STORAGE_KEY_V2 = "nakupny_zoznam_device_v2";
-      const UNSAVED_KEY_V2 = "nakupny_zoznam_unsaved_v2";
-      let lastRemoteSnapshotV2 = [];
-      let lastRemoteFetchedAtV2 = 0;
-      let remotePollInFlightV2 = false;
-      let remoteHighlightMetaV2 = new Map();
-      let remoteHighlightTimerV2 = null;
-      let dragStateV2 = null;
-      let pendingCardDragV2 = null;
-      let pullRefreshStateV2 = null;
-      let hasUnsavedChangesV2 = localStorage.getItem(UNSAVED_KEY_V2) === "1";
-      const LOCAL_DEVICE_V2 = loadLocalDeviceV2();
+      updateStatusFromState();
+    }
 
-      function nowIso() {
-        return new Date().toISOString();
+    function setStatus(mode, text) {
+      const pill = document.getElementById("sync-status-pill");
+      const label = document.getElementById("sync-status-text");
+      if (!pill || !label) return;
+
+      pill.classList.remove("loading", "synced", "saving", "error");
+      if (mode) {
+        pill.classList.add(mode);
+      }
+      label.textContent = text;
+    }
+
+    function updateStatusFromState() {
+      if (state.syncInProgress) return;
+
+      if (state.unsaved) {
+        setStatus("saving", "Neulozene zmeny");
+        return;
       }
 
-      function detectDeviceTypeV2() {
-        const ua = (navigator.userAgent || "").toLowerCase();
-        return /android|iphone|ipad|ipod|mobile/i.test(ua) ? "mobile" : "desktop";
+      if (localStorage.getItem(SYNC_KEY)) {
+        setStatus("synced", "Ulozene");
+        return;
       }
 
-      function defaultDeviceLabelV2(type) {
-        return type === "mobile" ? "Mobil" : "PC";
+      setStatus("", "Pripravene");
+    }
+
+    function touchSyncSuccess() {
+      localStorage.setItem(SYNC_KEY, nowIso());
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      if (!toast) return;
+
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      if (state.toastTimer) {
+        clearTimeout(state.toastTimer);
       }
 
-      function loadLocalDeviceV2() {
-        const fallbackType = detectDeviceTypeV2();
+      state.toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 1800);
+    }
 
-        try {
-          const raw = localStorage.getItem(DEVICE_STORAGE_KEY_V2);
-          const parsed = raw ? JSON.parse(raw) : {};
-          const device = {
-            id: parsed && parsed.id ? String(parsed.id) : uid(),
-            type: parsed && parsed.type ? String(parsed.type) : fallbackType,
-            label: parsed && parsed.label ? String(parsed.label) : defaultDeviceLabelV2(fallbackType)
-          };
-          localStorage.setItem(DEVICE_STORAGE_KEY_V2, JSON.stringify(device));
-          return device;
-        } catch (error) {
-          return {
-            id: uid(),
-            type: fallbackType,
-            label: defaultDeviceLabelV2(fallbackType)
-          };
+    function updateDeviceUi() {
+      const summary = document.getElementById("device-summary");
+      const headerButton = document.getElementById("btn-device");
+      const label = device.label || defaultDeviceLabel(device.type);
+      const typeText = device.type === "mobile" ? "mobil" : "PC";
+
+      if (summary) {
+        summary.textContent = "Toto zariadenie: " + label + " (" + typeText + ")";
+      }
+
+      if (headerButton) {
+        headerButton.textContent = "Zariadenie: " + label;
+      }
+    }
+
+    function promptForDeviceName() {
+      const suggested = device.label && device.label !== defaultDeviceLabel(device.type)
+        ? device.label
+        : (device.type === "mobile" ? "Domi" : "Peto");
+      const raw = window.prompt("Nazov zariadenia", suggested);
+      if (raw === null) return;
+
+      const next = raw.trim().slice(0, 24);
+      if (!next) {
+        showToast("Nazov ostal bez zmeny.");
+        return;
+      }
+
+      device.label = next;
+      saveDevice();
+      updateDeviceUi();
+      showToast("Zariadenie nastavene.");
+    }
+
+    function renderGroup(container, title, className, items) {
+      if (!items.length) return;
+
+      const heading = document.createElement("div");
+      heading.className = "group-title" + (className ? " " + className : "");
+      heading.textContent = title;
+      container.appendChild(heading);
+
+      items.forEach(item => {
+        container.appendChild(renderItem(item));
+      });
+    }
+
+    function renderItem(item) {
+      const card = document.createElement("div");
+      card.className = "item" + (item.bought ? " bought" : "");
+      card.dataset.id = item.id;
+
+      card.addEventListener("click", event => {
+        if (event.target.closest("button")) return;
+        toggleBought(item.id);
+      });
+
+      const check = document.createElement("div");
+      check.className = "item-check";
+      check.textContent = item.bought ? "OK" : "";
+
+      const main = document.createElement("div");
+      main.className = "item-main";
+
+      const name = document.createElement("div");
+      name.className = "item-name";
+      name.textContent = item.name;
+      main.appendChild(name);
+
+      const meta = document.createElement("div");
+      meta.className = "item-meta";
+
+      const source = sourceText(item);
+      if (source) {
+        const sourceChip = document.createElement("div");
+        sourceChip.className = "chip source";
+        sourceChip.textContent = source;
+        meta.appendChild(sourceChip);
+      }
+
+      if (item.bought && item.boughtAt) {
+        const boughtChip = document.createElement("div");
+        boughtChip.className = "chip";
+        boughtChip.textContent = formatDate(item.boughtAt);
+        meta.appendChild(boughtChip);
+      }
+
+      if (meta.children.length) {
+        main.appendChild(meta);
+      }
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "item-delete";
+      del.textContent = "X";
+      del.addEventListener("click", event => {
+        event.stopPropagation();
+        deleteSingle(item.id);
+      });
+
+      card.appendChild(check);
+      card.appendChild(main);
+      card.appendChild(del);
+      return card;
+    }
+
+    function render() {
+      const list = document.getElementById("list");
+      if (!list) return;
+
+      list.innerHTML = "";
+      const items = visibleItems();
+
+      if (!items.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.innerHTML = [
+          '<div class="empty-title">Zoznam je prazdny</div>',
+          '<div>Pridaj prvu polozku alebo nacitaj data zo Sheets.</div>'
+        ].join("");
+        list.appendChild(empty);
+        return;
+      }
+
+      const open = items.filter(item => !item.bought);
+      const done = items.filter(item => item.bought);
+
+      renderGroup(list, "Kupit", "", open);
+      renderGroup(list, "Kupene", "done", done);
+    }
+
+    function nextTopOrder() {
+      const items = visibleItems();
+      if (!items.length) return 0;
+      return Math.min(...items.map(item => Number.isFinite(Number(item.order)) ? Number(item.order) : 0)) - 1;
+    }
+
+    function addItem(name) {
+      const clean = String(name || "").trim();
+      if (!clean) {
+        showToast("Napis, co treba kupit.");
+        return;
+      }
+
+      state.items.unshift(stampItem({
+        id: uid(),
+        name: clean,
+        bought: false,
+        boughtAt: null,
+        deleted: false,
+        order: nextTopOrder()
+      }));
+
+      persistItems();
+      setUnsaved(true);
+      render();
+      showToast("Polozka pridana.");
+    }
+
+    function toggleBought(id) {
+      const item = state.items.find(entry => entry.id === id);
+      if (!item || item.deleted) return;
+
+      const timestamp = nowIso();
+      item.bought = !item.bought;
+      item.boughtAt = item.bought ? timestamp : null;
+      stampItem(item, timestamp);
+      persistItems();
+      setUnsaved(true);
+      render();
+    }
+
+    function deleteSingle(id) {
+      const item = state.items.find(entry => entry.id === id);
+      if (!item || item.deleted) return;
+
+      item.deleted = true;
+      stampItem(item);
+      persistItems();
+      setUnsaved(true);
+      render();
+      showToast("Polozka vymazana.");
+    }
+
+    function markAllBought() {
+      const items = visibleItems().filter(item => !item.bought);
+      if (!items.length) {
+        showToast("Nie je co oznacit.");
+        return;
+      }
+
+      const timestamp = nowIso();
+      items.forEach(item => {
+        item.bought = true;
+        item.boughtAt = timestamp;
+        stampItem(item, timestamp);
+      });
+
+      persistItems();
+      setUnsaved(true);
+      render();
+      showToast("Vsetko je oznacene.");
+    }
+
+    function clearChecked() {
+      const items = state.items.filter(item => item && item.bought && !item.deleted);
+      if (!items.length) {
+        showToast("Nie je co vymazat.");
+        return;
+      }
+
+      const timestamp = nowIso();
+      items.forEach(item => {
+        item.deleted = true;
+        stampItem(item, timestamp);
+      });
+
+      persistItems();
+      setUnsaved(true);
+      render();
+      showToast("Oznacene polozky vymazane.");
+    }
+
+    function parseSyncItems(data) {
+      if (Array.isArray(data)) return normalizeItems(data);
+      if (data && Array.isArray(data.items)) return normalizeItems(data.items);
+      return [];
+    }
+
+    function fetchRemoteItems() {
+      const attempts = [
+        () => fetch(SHEETS_SYNC_URL + "?action=get", { method: "GET", cache: "no-store" }),
+        () => fetch(SHEETS_SYNC_URL + "?action=load", { method: "GET", cache: "no-store" }),
+        () => fetch(SHEETS_SYNC_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "get" })
+        })
+      ];
+
+      let index = 0;
+      let lastError = null;
+
+      function runNext() {
+        if (index >= attempts.length) {
+          return Promise.reject(lastError || new Error("Sheets sync is unavailable."));
         }
+
+        return attempts[index++]()
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("HTTP " + response.status);
+            }
+
+            return response.json().catch(() => {
+              throw new Error("Invalid JSON response.");
+            });
+          })
+          .then(data => {
+            if (data && data.ok === false) {
+              throw new Error(data.error || "Sheets sync error.");
+            }
+
+            if (Array.isArray(data) || (data && Array.isArray(data.items))) {
+              return parseSyncItems(data);
+            }
+
+            throw new Error("Unexpected sync response.");
+          })
+          .catch(error => {
+            lastError = error;
+            return runNext();
+          });
       }
 
-      function persistLocalDeviceV2() {
-        localStorage.setItem(DEVICE_STORAGE_KEY_V2, JSON.stringify(LOCAL_DEVICE_V2));
+      return runNext();
+    }
+
+    function loadFromSheets(showFeedback) {
+      if (state.syncInProgress) return Promise.resolve(false);
+      if (state.unsaved) {
+        if (showFeedback) {
+          showToast("Mas neulozene zmeny. Najprv uloz.");
+        }
+        updatePullIndicator(0, false);
+        return Promise.resolve(false);
       }
 
-      function isGenericDeviceLabelV2(label, type) {
-        return !label || label === defaultDeviceLabelV2(type);
-      }
+      state.syncInProgress = true;
+      setStatus("loading", "Nacitavam zo Sheets...");
+      updatePullIndicator(PULL_THRESHOLD, true);
 
-      function hasCustomDeviceLabelV2() {
-        return !isGenericDeviceLabelV2(LOCAL_DEVICE_V2.label, LOCAL_DEVICE_V2.type);
-      }
-
-      function updateDeviceNameButtonV2() {
-        const button = document.getElementById("btn-device-name");
-        if (!button) return;
-        button.textContent = "Zariadenie: " + (LOCAL_DEVICE_V2.label || defaultDeviceLabelV2(LOCAL_DEVICE_V2.type));
-      }
-
-      function promptForDeviceLabelV2(force) {
-        const currentLabel = LOCAL_DEVICE_V2.label || defaultDeviceLabelV2(LOCAL_DEVICE_V2.type);
-        const suggested = hasCustomDeviceLabelV2()
-          ? currentLabel
-          : (LOCAL_DEVICE_V2.type === "mobile" ? "Domi" : "Peto");
-        const raw = window.prompt("Nazov tohto zariadenia", suggested);
-
-        if (raw === null) return false;
-
-        const nextLabel = raw.trim().slice(0, 24);
-        if (!nextLabel) {
-          if (force) {
-            showToast("Nazov ostal bez zmeny.", "\u2139\uFE0F");
+      return fetchRemoteItems()
+        .then(remoteItems => {
+          state.items = normalizeItems(remoteItems);
+          persistItems();
+          touchSyncSuccess();
+          setUnsaved(false);
+          render();
+          setStatus("synced", "Aktualne");
+          if (showFeedback) {
+            showToast("Nacitane zo Sheets.");
+          }
+          return true;
+        })
+        .catch(error => {
+          console.error(error);
+          setStatus("error", "Nacitavanie zlyhalo");
+          if (showFeedback) {
+            showToast("Nacitavanie zlyhalo.");
           }
           return false;
-        }
-
-        LOCAL_DEVICE_V2.label = nextLabel;
-        persistLocalDeviceV2();
-        updateDeviceNameButtonV2();
-        showToast("Zariadenie: " + nextLabel, "\u2705");
-        return true;
-      }
-
-      function stampItemWithDeviceV2(item, timestamp) {
-        if (!item) return item;
-        item.updatedAt = timestamp || nowIso();
-        item.updatedById = LOCAL_DEVICE_V2.id;
-        item.updatedByType = LOCAL_DEVICE_V2.type;
-        item.updatedByLabel = LOCAL_DEVICE_V2.label;
-        return item;
-      }
-
-      function remoteDeviceTypeClassV2(type) {
-        return type === "mobile" ? "mobile" : "desktop";
-      }
-
-      function remoteDeviceBadgeTextV2(source) {
-        const label = source && source.updatedByLabel ? source.updatedByLabel : source && source.label ? source.label : "";
-        if (label) return "Od " + label;
-        const type = source && source.updatedByType ? source.updatedByType : source && source.type ? source.type : "";
-        if (type === "mobile") return "Z mobilu";
-        if (type === "desktop") return "Z PC";
-        return "Z ineho zariadenia";
-      }
-
-      function itemSourceMetaV2(item) {
-        if (!item || !item.updatedById || item.updatedById === LOCAL_DEVICE_V2.id) {
-          return null;
-        }
-
-        return {
-          updatedById: item.updatedById,
-          updatedByType: remoteDeviceTypeClassV2(item.updatedByType),
-          updatedByLabel: item.updatedByLabel || defaultDeviceLabelV2(item.updatedByType)
-        };
-      }
-
-      function normalizeItemsV2(items) {
-        if (!Array.isArray(items)) return [];
-
-        const merged = new Map();
-        items
-          .filter(item => item && typeof item.name === "string" && item.name.trim())
-          .forEach((item, index) => {
-            const normalized = {
-              id: typeof item.id === "string" && item.id ? item.id : uid(),
-              name: item.name.trim(),
-              qty: "",
-              bought: Boolean(item.bought),
-              boughtAt: item.boughtAt || null,
-              updatedAt: item.updatedAt || item.boughtAt || TOMBSTONE_TS,
-              deleted: item.deleted === true,
-              order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
-              updatedById: item.updatedById ? String(item.updatedById) : "",
-              updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
-              updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ""
-            };
-
-            const existing = merged.get(normalized.id);
-            if (!existing) {
-              merged.set(normalized.id, normalized);
-              return;
-            }
-
-            const existingTime = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
-            const normalizedTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
-            if (normalizedTime >= existingTime) {
-              merged.set(normalized.id, normalized);
-            }
-          });
-
-        return Array.from(merged.values()).sort((a, b) => {
-          if (a.order !== b.order) {
-            return a.order - b.order;
-          }
-          const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-          const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-          return bTime - aTime;
+        })
+        .finally(() => {
+          state.syncInProgress = false;
+          updatePullIndicator(0, false);
+          updateStatusFromState();
         });
+    }
+
+    function saveToSheets(showFeedback) {
+      if (state.syncInProgress) return Promise.resolve(false);
+
+      state.syncInProgress = true;
+      setStatus("loading", "Ukladam do Sheets...");
+
+      return fetchRemoteItems()
+        .then(remoteItems => {
+          const merged = normalizeItems([...(remoteItems || []), ...(state.items || [])]);
+
+          return fetch(SHEETS_SYNC_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "sync", items: merged })
+          })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+              }
+
+              return response.json().catch(() => ({}));
+            })
+            .then(data => {
+              if (data && data.ok === false) {
+                throw new Error(data.error || "Sheets sync error.");
+              }
+
+              if (Array.isArray(data) || (data && Array.isArray(data.items))) {
+                return parseSyncItems(data);
+              }
+
+              return merged;
+            });
+        })
+        .then(finalItems => {
+          state.items = normalizeItems(finalItems);
+          persistItems();
+          touchSyncSuccess();
+          setUnsaved(false);
+          render();
+          setStatus("synced", "Ulozene");
+          if (showFeedback) {
+            showToast("Ulozene do Sheets.");
+          }
+          return true;
+        })
+        .catch(error => {
+          console.error(error);
+          setStatus("error", "Ukladanie zlyhalo");
+          if (showFeedback) {
+            showToast("Ulozenie zlyhalo.");
+          }
+          return false;
+        })
+        .finally(() => {
+          state.syncInProgress = false;
+          updateStatusFromState();
+        });
+    }
+
+    function updatePullIndicator(distance, loading) {
+      const indicator = document.getElementById("pull-indicator");
+      if (!indicator) return;
+
+      if (loading) {
+        indicator.classList.add("active");
+        indicator.textContent = "Nacitavam zo Sheets...";
+        return;
       }
 
-      function visibleItemsV2() {
-        return normalizeItemsV2(state.items || []).filter(item => !item.deleted);
-      }
-
-      function mergeItemsV2(localItems, remoteItems) {
-        return normalizeItemsV2([...(remoteItems || []), ...(localItems || [])]);
-      }
-
-      function visibleIdsV2(items) {
-        return new Set(normalizeItemsV2(items).filter(item => !item.deleted).map(item => item.id));
-      }
-
-      function parseSyncItemsV2(data) {
-        if (Array.isArray(data)) return normalizeItemsV2(data);
-        if (data && Array.isArray(data.items)) return normalizeItemsV2(data.items);
-        return [];
-      }
-
-      function persistStateV2() {
-        state.items = normalizeItemsV2(state.items || []);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
-      }
-
-      function setSyncStatusV2(mode, label) {
-        const pill = document.getElementById("sync-pill");
-        const text = document.getElementById("sync-status-text");
-        if (!pill || !text) return;
-        pill.classList.remove("loading", "synced", "saving", "error");
-        if (mode) {
-          pill.classList.add(mode);
-        }
-        text.textContent = label;
-      }
-
-      function markUnsavedChangesV2() {
-        hasUnsavedChangesV2 = true;
-        localStorage.setItem(UNSAVED_KEY_V2, "1");
-        setSyncStatusV2("saving", "Neulozene zmeny");
-      }
-
-      function clearUnsavedChangesV2() {
-        hasUnsavedChangesV2 = false;
-        localStorage.removeItem(UNSAVED_KEY_V2);
-      }
-
-      function syncStatusFromStateV2(labelWhenClean) {
-        if (hasUnsavedChangesV2) {
-          setSyncStatusV2("saving", "Neulozene zmeny");
-          return;
-        }
-
-        setSyncStatusV2("synced", labelWhenClean || "Aktualne");
-      }
-
-      function updatePullRefreshIndicatorV2(distance, mode) {
-        const indicator = document.getElementById("pull-refresh");
-        if (!indicator) return;
-
-        indicator.classList.remove("ready", "loading");
-
-        if (mode === "loading") {
-          indicator.classList.add("loading");
-          indicator.style.height = "42px";
-          indicator.style.opacity = "1";
-          indicator.textContent = "Nacitavam zo Sheets...";
-          return;
-        }
-
-        const clamped = Math.max(0, Math.min(distance || 0, 96));
-        indicator.style.height = `${Math.min(48, Math.round(clamped * 0.65))}px`;
-        indicator.style.opacity = clamped > 4 ? "1" : "0";
-
-        if (!clamped) {
-          indicator.textContent = "Potiahni dole pre nacitanie";
-          return;
-        }
-
-        if (clamped >= PULL_REFRESH_THRESHOLD_V2) {
-          indicator.classList.add("ready");
-          indicator.textContent = "Pusti pre nacitanie";
-          return;
-        }
-
+      if (!distance) {
+        indicator.classList.remove("active");
         indicator.textContent = "Potiahni dole pre nacitanie";
+        return;
       }
 
-      function isPullRefreshBlockedTargetV2(target) {
-        const element = target instanceof Element ? target : target && target.parentElement;
-        return Boolean(element && element.closest(".check, .btn-mini, input, button"));
-      }
+      indicator.classList.add("active");
+      indicator.textContent = distance >= PULL_THRESHOLD ? "Pusti pre nacitanie" : "Potiahni dole pre nacitanie";
+    }
 
-      function beginPullRefreshGestureV2(event) {
-        const list = document.getElementById("list-scroll");
-        if (!list || dragStateV2 || pendingCardDragV2 || isSyncInProgress) return;
+    function bindPullToRefresh() {
+      const list = document.getElementById("list");
+      if (!list || list.dataset.pullBound === "1") return;
+
+      list.dataset.pullBound = "1";
+
+      list.addEventListener("touchstart", event => {
+        if (state.syncInProgress || state.unsaved) return;
         if (list.scrollTop > 0) return;
 
         const touch = event.touches && event.touches[0];
         if (!touch) return;
-        if (isPullRefreshBlockedTargetV2(event.target)) return;
+        if (event.target.closest("button, input")) return;
 
-        pullRefreshStateV2 = {
+        state.pull = {
           startY: touch.clientY,
-          distance: 0,
-          ready: false
+          distance: 0
         };
-      }
+      }, { passive: true });
 
-      function movePullRefreshGestureV2(event) {
-        if (!pullRefreshStateV2) return;
+      list.addEventListener("touchmove", event => {
+        if (!state.pull) return;
 
-        const list = document.getElementById("list-scroll");
         const touch = event.touches && event.touches[0];
-        if (!list || !touch) return;
+        if (!touch) return;
 
-        const delta = touch.clientY - pullRefreshStateV2.startY;
+        const delta = touch.clientY - state.pull.startY;
         if (delta <= 0 || list.scrollTop > 0) {
-          pullRefreshStateV2 = null;
-          updatePullRefreshIndicatorV2(0);
+          state.pull = null;
+          updatePullIndicator(0, false);
           return;
         }
 
-        const distance = Math.min(110, delta * 0.65);
-        if (distance > 8) {
-          cancelPendingCardDragV2();
-        }
-        pullRefreshStateV2.distance = distance;
-        pullRefreshStateV2.ready = distance >= PULL_REFRESH_THRESHOLD_V2;
-        updatePullRefreshIndicatorV2(distance);
+        state.pull.distance = Math.min(120, delta * 0.7);
+        updatePullIndicator(state.pull.distance, false);
         event.preventDefault();
-      }
+      }, { passive: false });
 
-      function endPullRefreshGestureV2() {
-        if (!pullRefreshStateV2) return;
-        const shouldRefresh = pullRefreshStateV2.ready;
-        pullRefreshStateV2 = null;
+      list.addEventListener("touchend", () => {
+        if (!state.pull) return;
 
-        if (shouldRefresh) {
-          refreshFromSheetsV2(true);
+        const shouldLoad = state.pull.distance >= PULL_THRESHOLD;
+        state.pull = null;
+
+        if (shouldLoad) {
+          loadFromSheets(true);
           return;
         }
 
-        updatePullRefreshIndicatorV2(0);
-      }
+        updatePullIndicator(0, false);
+      }, { passive: true });
 
-      function bindPullRefreshV2() {
-        const list = document.getElementById("list-scroll");
-        if (!list || list.dataset.pullRefreshBound === "1") return;
+      list.addEventListener("touchcancel", () => {
+        state.pull = null;
+        updatePullIndicator(0, false);
+      }, { passive: true });
+    }
 
-        list.dataset.pullRefreshBound = "1";
-        list.addEventListener("touchstart", beginPullRefreshGestureV2, { passive: true });
-        list.addEventListener("touchmove", movePullRefreshGestureV2, { passive: false });
-        list.addEventListener("touchend", endPullRefreshGestureV2, { passive: true });
-        list.addEventListener("touchcancel", endPullRefreshGestureV2, { passive: true });
-      }
+    function registerServiceWorker() {
+      if (!("serviceWorker" in navigator)) return;
 
-      function refreshRemoteHighlightsV2(items) {
-        if (items && items.length) {
-          items.forEach(item => {
-            remoteHighlightMetaV2.set(item.id, remoteDeviceTypeClassV2(item.updatedByType));
-          });
-          renderV2();
-        }
-        if (remoteHighlightTimerV2) {
-          clearTimeout(remoteHighlightTimerV2);
-        }
-        remoteHighlightTimerV2 = setTimeout(() => {
-          remoteHighlightMetaV2.clear();
-          renderV2();
-        }, 12000);
-      }
+      let refreshing = false;
 
-      function requestNotificationPermissionV2() {
-        if (!("Notification" in window)) return;
-        if (Notification.permission !== "default") return;
-        Notification.requestPermission().catch(() => {});
-      }
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
 
-      function enableNotificationPromptOnInteractionV2() {
-        const handler = () => requestNotificationPermissionV2();
-        document.addEventListener("click", handler, { once: true });
-        document.addEventListener("keydown", handler, { once: true });
-      }
-
-      function vibrateFeedbackV2(pattern) {
-        try {
-          if (navigator.vibrate) {
-            navigator.vibrate(pattern);
-          }
-        } catch (error) {}
-      }
-
-      function showSystemNotificationV2(title, body) {
-        if (!("Notification" in window) || Notification.permission !== "granted") {
-          return Promise.resolve(false);
-        }
-
-        const fallback = () => {
-          try {
-            const notification = new Notification(title, {
-              body,
-              tag: "nakupny-zoznam-remote"
-            });
-            setTimeout(() => notification.close(), 6000);
-            return true;
-          } catch (error) {
-            console.error(error);
-            return false;
-          }
-        };
-
-        if (!("serviceWorker" in navigator)) {
-          return Promise.resolve(fallback());
-        }
-
-        return navigator.serviceWorker.ready
-          .then(registration => {
-            if (!registration || !registration.showNotification) {
-              return fallback();
-            }
-
-            return registration.showNotification(title, {
-              body,
-              tag: "nakupny-zoznam-remote",
-              renotify: true,
-              icon: "./icons/icon_web_256_256.png",
-              badge: "./icons/icon_android_xhdpi_96.png"
-            }).then(() => true);
-          })
-          .catch(error => {
-            console.error(error);
-            return fallback();
-          });
-      }
-
-      function showRemoteAddNotificationV2(addedItems) {
-        if (!addedItems.length) return;
-
-        const source = addedItems[0];
-        const label = addedItems.length === 1
-          ? remoteDeviceBadgeTextV2(source) + ": " + addedItems[0].name
-          : "Pribudli " + addedItems.length + " nove polozky";
-
-        showToast(label, "\u{1F514}");
-        vibrateFeedbackV2([120, 60, 120]);
-
-        if (!("Notification" in window) || Notification.permission !== "granted") {
-          return;
-        }
-
-        const body = addedItems.length === 1
-          ? remoteDeviceBadgeTextV2(source) + ": " + addedItems[0].name
-          : remoteDeviceBadgeTextV2(source) + " - " + addedItems.slice(0, 3).map(item => item.name).join(", ");
-
-        showSystemNotificationV2("Nakupny zoznam", body).catch(console.error);
-      }
-
-      function applyRemoteItemsV2(remoteItems, notifyAboutAdds) {
-        const localItems = normalizeItemsV2(state.items || []);
-        const localMap = new Map(localItems.map(item => [item.id, item]));
-        const remoteVisibleItems = normalizeItemsV2(remoteItems).filter(item => !item.deleted);
-        const changedItems = remoteVisibleItems.filter(item => {
-          if (!item.updatedById || item.updatedById === LOCAL_DEVICE_V2.id) {
-            return false;
-          }
-
-          const local = localMap.get(item.id);
-          if (!local) {
-            return true;
-          }
-
-          return item.updatedAt !== local.updatedAt
-            || item.name !== local.name
-            || item.bought !== local.bought
-            || item.boughtAt !== local.boughtAt
-            || Number(item.order) !== Number(local.order);
+      navigator.serviceWorker.register("./service-worker.js")
+        .then(registration => registration.update())
+        .catch(error => {
+          console.error(error);
         });
-        const addedItems = changedItems.filter(item => !localMap.has(item.id));
+    }
 
-        state.items = mergeItemsV2(state.items || [], remoteItems || []);
-        saveAndRenderV2();
+    function boot() {
+      state.items = loadLocalItems();
 
-        if (changedItems.length) {
-          refreshRemoteHighlightsV2(changedItems);
-        }
-        if (notifyAboutAdds && addedItems.length) {
-          showRemoteAddNotificationV2(addedItems);
-        }
-      }
+      updateDeviceUi();
+      render();
+      updateStatusFromState();
+      bindPullToRefresh();
+      registerServiceWorker();
 
-      function updateStatsV2() {
-        const visibleItems = visibleItemsV2();
-        const stats = document.querySelector(".stats");
-        const openCount = visibleItems.filter(i => !i.bought).length;
-        const doneCount = visibleItems.filter(i => i.bought).length;
-        document.getElementById("stats-open").textContent = openCount;
-        document.getElementById("stats-done").textContent = doneCount;
-        if (stats) {
-          stats.style.display = visibleItems.length ? "flex" : "none";
-        }
-      }
-
-      function renderV2() {
-        const cont = document.getElementById("list-scroll");
-        const empty = document.getElementById("empty-state");
-        const visibleItems = visibleItemsV2();
-        cancelPendingCardDragV2();
-        if (dragStateV2) {
-          cancelActiveDragV2(false);
-        }
-        cont.innerHTML = "";
-
-        if (!visibleItems.length) {
-          cont.appendChild(empty);
-          updateStatsV2();
-          return;
-        }
-
-        const open = visibleItems.filter(i => !i.bought);
-        const done = visibleItems.filter(i => i.bought);
-
-        function renderGroup(titleText, className, items) {
-          if (!items.length) return;
-          const title = document.createElement("div");
-          title.className = className;
-          title.innerHTML = "<span class='dot'></span><span>" + titleText + "</span>";
-          cont.appendChild(title);
-          items.forEach(item => cont.appendChild(renderItemV2(item)));
-        }
-
-        renderGroup("Kupit", "group-title", open);
-        renderGroup("Kupene", "group-title done", done);
-        updateStatsV2();
-      }
-
-      function renderItemV2(it) {
-        const remoteGlowType = remoteHighlightMetaV2.get(it.id);
-        const sourceMeta = itemSourceMetaV2(it);
-        const card = document.createElement("div");
-        card.className = "item"
-          + (it.bought ? " bought" : "")
-          + (remoteGlowType ? " remote-new remote-" + remoteGlowType : "");
-        card.dataset.id = it.id;
-        card.dataset.bought = it.bought ? "true" : "false";
-        card.addEventListener("pointerdown", event => queueCardDragV2(event, it.id));
-
-        const check = document.createElement("div");
-        check.className = "check";
-        check.innerHTML = "<span>\u2714</span>";
-        check.addEventListener("click", e => {
-          e.stopPropagation();
-          toggleBoughtV2(it.id);
-        });
-
-        const main = document.createElement("div");
-        main.className = "item-main";
-
-        const row = document.createElement("div");
-        row.className = "item-title-row";
-        const name = document.createElement("div");
-        name.className = "item-name";
-        name.textContent = it.name;
-        row.appendChild(name);
-
-        const meta = document.createElement("div");
-        meta.className = "item-meta-row";
-        if (sourceMeta) {
-          const remote = document.createElement("div");
-          remote.className = "time-pill remote-pill " + remoteDeviceTypeClassV2(sourceMeta.updatedByType);
-          remote.textContent = remoteDeviceBadgeTextV2(sourceMeta);
-          meta.appendChild(remote);
-        }
-        if (it.bought && it.boughtAt) {
-          const t = document.createElement("div");
-          t.className = "time-pill";
-          t.textContent = formatDate(it.boughtAt);
-          meta.appendChild(t);
-        }
-
-        main.appendChild(row);
-        main.appendChild(meta);
-
-        const actions = document.createElement("div");
-        actions.className = "item-actions";
-
-        const del = document.createElement("button");
-        del.className = "btn-mini delete";
-        del.innerHTML = "<span>\u{1F5D1}\uFE0F</span>";
-        del.addEventListener("click", e => {
-          e.stopPropagation();
-          deleteSingleV2(it.id);
-        });
-        actions.appendChild(del);
-
-        card.appendChild(check);
-        card.appendChild(main);
-        card.appendChild(actions);
-        return card;
-      }
-
-      function saveAndRenderV2() {
-        persistStateV2();
-        renderV2();
-      }
-
-      function bucketItemsSelectorV2(bought) {
-        return `#list-scroll .item[data-bought="${bought}"][data-id]`;
-      }
-
-      function getBucketCardsV2(bought, excludeId) {
-        return Array.from(document.querySelectorAll(bucketItemsSelectorV2(bought)))
-          .filter(card => !excludeId || card.dataset.id !== excludeId);
-      }
-
-      function clearPendingCardDragTimerV2() {
-        if (pendingCardDragV2 && pendingCardDragV2.timer) {
-          clearTimeout(pendingCardDragV2.timer);
-        }
-      }
-
-      function removePendingCardDragListenersV2() {
-        window.removeEventListener("pointermove", monitorPendingCardDragV2);
-        window.removeEventListener("pointerup", cancelPendingCardDragFromEventV2);
-        window.removeEventListener("pointercancel", cancelPendingCardDragFromEventV2);
-      }
-
-      function cancelPendingCardDragV2() {
-        if (!pendingCardDragV2) return;
-        clearPendingCardDragTimerV2();
-        removePendingCardDragListenersV2();
-        pendingCardDragV2 = null;
-      }
-
-      function cancelPendingCardDragFromEventV2(event) {
-        if (!pendingCardDragV2) return;
-        if (event.pointerId !== pendingCardDragV2.pointerId) return;
-        cancelPendingCardDragV2();
-      }
-
-      function monitorPendingCardDragV2(event) {
-        if (!pendingCardDragV2) return;
-        if (event.pointerId !== pendingCardDragV2.pointerId) return;
-
-        pendingCardDragV2.currentX = event.clientX;
-        pendingCardDragV2.currentY = event.clientY;
-
-        const deltaX = Math.abs(event.clientX - pendingCardDragV2.startX);
-        const deltaY = Math.abs(event.clientY - pendingCardDragV2.startY);
-        if (deltaX > CARD_DRAG_MOVE_TOLERANCE || deltaY > CARD_DRAG_MOVE_TOLERANCE) {
-          cancelPendingCardDragV2();
-        }
-      }
-
-      function isCardDragBlockedTargetV2(target) {
-        const element = target instanceof Element ? target : target && target.parentElement;
-        return Boolean(element && element.closest(".check, .btn-mini.delete"));
-      }
-
-      function queueCardDragV2(event, id) {
-        if (event.button !== undefined && event.button !== 0) return;
-        if (dragStateV2) return;
-        if (isCardDragBlockedTargetV2(event.target)) return;
-
-        cancelPendingCardDragV2();
-
-        pendingCardDragV2 = {
-          id,
-          card: event.currentTarget,
-          pointerId: event.pointerId,
-          startX: event.clientX,
-          startY: event.clientY,
-          currentX: event.clientX,
-          currentY: event.clientY,
-          timer: setTimeout(() => {
-            if (!pendingCardDragV2 || pendingCardDragV2.pointerId !== event.pointerId) return;
-            const payload = pendingCardDragV2;
-            cancelPendingCardDragV2();
-            startDragV2({
-              button: 0,
-              pointerId: payload.pointerId,
-              clientX: payload.currentX,
-              clientY: payload.currentY,
-              currentTarget: payload.card,
-              preventDefault() {},
-              stopPropagation() {}
-            }, payload.id);
-          }, CARD_DRAG_HOLD_MS)
-        };
-
-        window.addEventListener("pointermove", monitorPendingCardDragV2, { passive: true });
-        window.addEventListener("pointerup", cancelPendingCardDragFromEventV2, { passive: true });
-        window.addEventListener("pointercancel", cancelPendingCardDragFromEventV2, { passive: true });
-      }
-
-      function updateDragVisualPositionV2(clientY) {
-        if (!dragStateV2) return;
-        const nextTop = clientY - dragStateV2.pointerOffsetY;
-        dragStateV2.card.style.top = `${nextTop}px`;
-      }
-
-      function maybeAutoScrollWhileDraggingV2(clientY) {
-        if (!dragStateV2 || !dragStateV2.list) return;
-        const rect = dragStateV2.list.getBoundingClientRect();
-        const edge = Math.min(84, rect.height * 0.22);
-        const maxStep = 22;
-
-        if (clientY < rect.top + edge) {
-          const ratio = Math.max(0, (edge - (clientY - rect.top)) / edge);
-          dragStateV2.list.scrollTop -= Math.ceil(maxStep * ratio);
-          return;
-        }
-
-        if (clientY > rect.bottom - edge) {
-          const ratio = Math.max(0, (clientY - (rect.bottom - edge)) / edge);
-          dragStateV2.list.scrollTop += Math.ceil(maxStep * ratio);
-        }
-      }
-
-      function movePlaceholderV2(clientY) {
-        if (!dragStateV2 || !dragStateV2.placeholder) return;
-
-        const siblings = getBucketCardsV2(dragStateV2.bought, dragStateV2.id);
-        if (!siblings.length) return;
-
-        const beforeElement = siblings.find(element => {
-          const rect = element.getBoundingClientRect();
-          return clientY < rect.top + rect.height / 2;
-        });
-
-        if (beforeElement) {
-          beforeElement.parentNode.insertBefore(dragStateV2.placeholder, beforeElement);
-          return;
-        }
-
-        const lastSibling = siblings[siblings.length - 1];
-        lastSibling.parentNode.insertBefore(dragStateV2.placeholder, lastSibling.nextSibling);
-      }
-
-      function cancelActiveDragV2(commitOrder) {
-        if (!dragStateV2) return;
-
-        const { card, dragSource, placeholder, pointerId } = dragStateV2;
-        window.removeEventListener("pointermove", moveDragV2);
-        window.removeEventListener("pointerup", endDragV2);
-        window.removeEventListener("pointercancel", endDragV2);
-        document.body.classList.remove("drag-active");
-
-        try {
-          dragSource.releasePointerCapture?.(pointerId);
-        } catch (error) {}
-
-        if (placeholder && placeholder.parentNode && card) {
-          placeholder.parentNode.insertBefore(card, placeholder);
-          placeholder.remove();
-        }
-
-        if (card) {
-          card.classList.remove("dragging");
-          card.style.position = "";
-          card.style.top = "";
-          card.style.left = "";
-          card.style.width = "";
-          card.style.height = "";
-          card.style.pointerEvents = "";
-          card.style.margin = "";
-          card.style.zIndex = "";
-        }
-
-        dragStateV2 = null;
-
-        if (commitOrder) {
-          syncOrderFromDomV2();
-        }
-      }
-
-      function syncOrderFromDomV2() {
-        const visibleCards = Array.from(document.querySelectorAll("#list-scroll .item[data-id]"));
-        if (!visibleCards.length) return;
-
-        let changed = false;
-        const timestamp = nowIso();
-
-        visibleCards.forEach((card, index) => {
-          const item = state.items.find(entry => entry.id === card.dataset.id);
-          if (!item || item.deleted) return;
-          if (item.order !== index) {
-            item.order = index;
-            stampItemWithDeviceV2(item, timestamp);
-            changed = true;
-          }
-        });
-
-        if (!changed) return;
-        saveAndRenderV2();
-        markUnsavedChangesV2();
-        scheduleAutoSync();
-      }
-
-      function startDragV2(event, id) {
-        if (event.button !== undefined && event.button !== 0) return;
-        cancelPendingCardDragV2();
-        if (dragStateV2) {
-          cancelActiveDragV2(false);
-        }
-
-        const dragSource = event.currentTarget;
-        const card = dragSource.closest(".item");
-        const list = document.getElementById("list-scroll");
-        if (!card || !list) return;
-
+      document.getElementById("add-form").addEventListener("submit", event => {
         event.preventDefault();
-        event.stopPropagation();
+        const input = document.getElementById("input-name");
+        addItem(input.value);
+        input.value = "";
+        input.focus();
+      });
 
-        const rect = card.getBoundingClientRect();
-        const placeholder = document.createElement("div");
-        placeholder.className = "drag-placeholder";
-        placeholder.style.height = `${rect.height}px`;
+      document.getElementById("btn-save").addEventListener("click", () => {
+        saveToSheets(true);
+      });
 
-        card.parentNode.insertBefore(placeholder, card);
-        document.body.appendChild(card);
+      document.getElementById("btn-load").addEventListener("click", () => {
+        loadFromSheets(true);
+      });
 
-        dragStateV2 = {
-          id,
-          dragSource,
-          card,
-          list,
-          placeholder,
-          pointerId: event.pointerId,
-          bought: card.dataset.bought,
-          pointerOffsetY: event.clientY - rect.top
-        };
-
-        document.body.classList.add("drag-active");
-        card.classList.add("dragging");
-        card.style.position = "fixed";
-        card.style.top = `${rect.top}px`;
-        card.style.left = `${rect.left}px`;
-        card.style.width = `${rect.width}px`;
-        card.style.height = `${rect.height}px`;
-        card.style.pointerEvents = "none";
-        card.style.margin = "0";
-        card.style.zIndex = "999";
-
-        window.addEventListener("pointermove", moveDragV2, { passive: false });
-        window.addEventListener("pointerup", endDragV2, { passive: false });
-        window.addEventListener("pointercancel", endDragV2, { passive: false });
-        vibrateFeedbackV2(18);
+      document.getElementById("btn-mark-all").addEventListener("click", markAllBought);
+      document.getElementById("btn-clear-checked").addEventListener("click", clearChecked);
+      document.getElementById("btn-device").addEventListener("click", promptForDeviceName);
+      if (!state.unsaved) {
+        loadFromSheets(false);
       }
+    }
 
-      function moveDragV2(event) {
-        if (!dragStateV2 || event.pointerId !== dragStateV2.pointerId) return;
-        event.preventDefault();
-        maybeAutoScrollWhileDraggingV2(event.clientY);
-        updateDragVisualPositionV2(event.clientY);
-        movePlaceholderV2(event.clientY);
-      }
-
-      function endDragV2(event) {
-        if (!dragStateV2 || event.pointerId !== dragStateV2.pointerId) return;
-        event.preventDefault();
-        cancelActiveDragV2(true);
-      }
-
-      function currentBucketIdsV2(boughtState) {
-        return visibleItemsV2()
-          .filter(item => item.bought === boughtState)
-          .map(item => item.id);
-      }
-
-      function canMoveItemV2(id, delta) {
-        const current = state.items.find(item => item.id === id);
-        if (!current || current.deleted) return false;
-        const bucketIds = currentBucketIdsV2(Boolean(current.bought));
-        const index = bucketIds.indexOf(id);
-        if (index === -1) return false;
-        const targetIndex = index + delta;
-        return targetIndex >= 0 && targetIndex < bucketIds.length;
-      }
-
-      function moveItemV2(id, delta) {
-        const current = state.items.find(item => item.id === id);
-        if (!current || current.deleted) return;
-        const bucketIds = currentBucketIdsV2(Boolean(current.bought));
-        const index = bucketIds.indexOf(id);
-        const targetIndex = index + delta;
-        if (index === -1 || targetIndex < 0 || targetIndex >= bucketIds.length) return;
-
-        const swapId = bucketIds[targetIndex];
-        const swapItem = state.items.find(item => item.id === swapId);
-        if (!swapItem) return;
-
-        const currentOrder = Number.isFinite(Number(current.order)) ? Number(current.order) : index;
-        const swapOrder = Number.isFinite(Number(swapItem.order)) ? Number(swapItem.order) : targetIndex;
-        const timestamp = nowIso();
-
-        current.order = swapOrder;
-        swapItem.order = currentOrder;
-        stampItemWithDeviceV2(current, timestamp);
-        stampItemWithDeviceV2(swapItem, timestamp);
-
-        saveAndRenderV2();
-        markUnsavedChangesV2();
-        scheduleAutoSync();
-      }
-
-      function addItemV2(name) {
-        const n = (name || "").trim();
-        if (!n) {
-          showToast("Napis, co treba kupit.", "\u{1F4DD}");
-          return;
-        }
-
-        state.items.unshift(stampItemWithDeviceV2({
-          id: uid(),
-          name: n,
-          qty: "",
-          bought: false,
-          boughtAt: null,
-          deleted: false,
-          order: Math.min(0, ...visibleItemsV2().map(item => item.order)) - 1
-        }));
-        saveAndRenderV2();
-        markUnsavedChangesV2();
-        scheduleAutoSync();
-        showToast("Pridane do zoznamu.", "\u{1F6D2}");
-      }
-
-      function toggleBoughtV2(id) {
-        const it = state.items.find(item => item.id === id);
-        if (!it || it.deleted) return;
-        const timestamp = nowIso();
-        it.bought = !it.bought;
-        it.boughtAt = it.bought ? timestamp : null;
-        stampItemWithDeviceV2(it, timestamp);
-        saveAndRenderV2();
-        markUnsavedChangesV2();
-        scheduleAutoSync();
-        showToast(it.bought ? "Oznacene ako kupene." : "Vratene medzi polozky na kupu.", it.bought ? "\u2705" : "\u21A9\uFE0F");
-      }
-
-      function deleteSingleV2(id) {
-        const it = state.items.find(item => item.id === id);
-        if (!it || it.deleted) return;
-        const name = it.name;
-        it.deleted = true;
-        stampItemWithDeviceV2(it);
-        saveAndRenderV2();
-        markUnsavedChangesV2();
-        scheduleAutoSync();
-        showToast("Vymazane: " + name, "\u{1F5D1}\uFE0F");
-      }
-
-      function deleteCheckedV2() {
-        const itemsToDelete = state.items.filter(item => item.bought && !item.deleted);
-        if (!itemsToDelete.length) {
-          showToast("Nie je co vymazat.", "\u{1F937}");
-          return;
-        }
-        if (!confirm("Vymazat vsetky kupene polozky?")) return;
-
-        const deletedAt = nowIso();
-        itemsToDelete.forEach(item => {
-          item.deleted = true;
-          stampItemWithDeviceV2(item, deletedAt);
-        });
-        saveAndRenderV2();
-        markUnsavedChangesV2();
-        scheduleAutoSync();
-        showToast("Kupene polozky vymazane.", "\u{1F5D1}\uFE0F");
-      }
-
-      function markAllBoughtV2() {
-        const items = (state.items || []).filter(item => item && !item.deleted);
-        if (!items.length) {
-          showToast("Zoznam je prazdny.", "\u{1F9FA}");
-          return;
-        }
-        const timestamp = nowIso();
-        items.forEach(item => {
-          item.bought = true;
-          item.boughtAt = timestamp;
-          stampItemWithDeviceV2(item, timestamp);
-        });
-        saveAndRenderV2();
-        markUnsavedChangesV2();
-        scheduleAutoSync();
-        showToast("Vsetko oznacene ako kupene.", "\u2705");
-      }
-
-      function fetchSheetsSnapshotV2(forceRefresh) {
-        if (!forceRefresh && lastRemoteSnapshotV2.length && Date.now() - lastRemoteFetchedAtV2 < REMOTE_CACHE_TTL_MS) {
-          return Promise.resolve(lastRemoteSnapshotV2);
-        }
-
-        const attempts = [
-          () => fetch(SHEETS_SYNC_URL + "?action=get", { method: "GET" }),
-          () => fetch(SHEETS_SYNC_URL + "?action=load", { method: "GET" }),
-          () => fetch(SHEETS_SYNC_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "get" })
-          })
-        ];
-
-        let index = 0;
-        function next() {
-          if (index >= attempts.length) return Promise.resolve([]);
-          return attempts[index++]()
-            .then(response => response.json().catch(() => ({})))
-            .then(data => {
-              const items = parseSyncItemsV2(data);
-              if (items.length || index >= attempts.length) {
-                lastRemoteSnapshotV2 = items;
-                lastRemoteFetchedAtV2 = Date.now();
-                return items;
-              }
-              return next();
-            })
-            .catch(() => next());
-        }
-
-        return next();
-      }
-
-      function refreshFromSheetsV2(showFeedback) {
-        if (remotePollInFlightV2 || isSyncInProgress || dragStateV2 || pendingCardDragV2) return Promise.resolve(false);
-        remotePollInFlightV2 = true;
-        updatePullRefreshIndicatorV2(0, "loading");
-        setSyncStatusV2("loading", "Nacitavam zo Sheets...");
-
-        return fetchSheetsSnapshotV2(true)
-          .then(remoteItems => {
-            applyRemoteItemsV2(remoteItems || [], false);
-            syncStatusFromStateV2("Aktualne");
-            if (showFeedback) {
-              showToast("Nacitane zo Sheets.", "\u21BB");
-            }
-            return true;
-          })
-          .catch(error => {
-            console.error(error);
-            syncStatusFromStateV2(localStorage.getItem(SYNC_KEY) ? "Ulozene" : "Pripravene");
-            if (showFeedback) {
-              showToast("Nacitavanie zlyhalo.", "\u26A0\uFE0F");
-            }
-            return false;
-          })
-          .finally(() => {
-            remotePollInFlightV2 = false;
-            if (!pullRefreshStateV2) {
-              setTimeout(() => updatePullRefreshIndicatorV2(0), 140);
-            }
-          });
-      }
-
-      function syncToSheetsV2(showFeedback) {
-        if (isSyncInProgress) {
-          return Promise.resolve();
-        }
-        isSyncInProgress = true;
-        clearTimeout(autoSyncTimer);
-
-        const pill = document.getElementById("sync-pill");
-        if (pill) {
-          pill.classList.add("loading");
-          pill.classList.remove("synced");
-        }
-        setSyncStatusV2("loading", "Ukladam do Sheets...");
-
-        fetchSheetsSnapshotV2(Boolean(showFeedback))
-          .then(remoteItems => {
-            const mergedItems = mergeItemsV2(state.items || [], remoteItems || []);
-            return fetch(SHEETS_SYNC_URL, {
-              method: "POST",
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify({ action: "sync", items: mergedItems })
-            })
-              .then(response => response.json().catch(() => ({})))
-              .then(data => {
-                const parsed = parseSyncItemsV2(data);
-                const finalItems = parsed.length ? parsed : mergedItems;
-                lastRemoteSnapshotV2 = finalItems;
-                lastRemoteFetchedAtV2 = Date.now();
-                return finalItems;
-              });
-          })
-          .then(items => {
-            applyRemoteItemsV2(items || [], false);
-            exportSyncTimestampSuccess(Boolean(showFeedback));
-            clearUnsavedChangesV2();
-            setSyncStatusV2("synced", "Ulozene");
-            if (showFeedback) showToast("Ulozene do Sheets.", "\u2705");
-          })
-          .catch(error => {
-            console.error(error);
-            const hasVisibleItems = visibleItemsV2().length > 0;
-            if (!hasVisibleItems) {
-              exportSyncTimestampSuccess(false);
-              clearUnsavedChangesV2();
-              setSyncStatusV2("synced", "Ulozene");
-              if (showFeedback) showToast("Zoznam je ulozeny.", "\u2705");
-              return;
-            }
-            setSyncStatusV2("error", "Ukladanie zlyhalo");
-            if (showFeedback) showToast("Ulozenie zlyhalo. Skus neskor.", "\u26A0\uFE0F");
-          })
-          .finally(() => {
-            isSyncInProgress = false;
-          });
-      }
-
-      function scheduleAutoSyncV2() {
-        clearTimeout(autoSyncTimer);
-      }
-
-      function replaceNodeWithHandler(id, handler) {
-        const element = document.getElementById(id);
-        if (!element) return null;
-        const replacement = element.cloneNode(true);
-        element.replaceWith(replacement);
-        replacement.addEventListener("click", handler);
-        return replacement;
-      }
-
-      function bootFinalSyncLayer() {
-        state.items = normalizeItemsV2(state.items || []);
-        updateDeviceNameButtonV2();
-
-        const statsNode = document.querySelector(".stats");
-        if (statsNode) {
-          statsNode.remove();
-        }
-
-        addItem = addItemV2;
-        toggleBought = toggleBoughtV2;
-        deleteSingle = deleteSingleV2;
-        deleteChecked = deleteCheckedV2;
-        markAllBought = markAllBoughtV2;
-        syncToSheets = syncToSheetsV2;
-        scheduleAutoSync = scheduleAutoSyncV2;
-        render = renderV2;
-        saveState = persistStateV2;
-        updateStats = function () { return; };
-        updateStatsV2 = function () { return; };
-
-        renderV2();
-        enableNotificationPromptOnInteractionV2();
-        bindPullRefreshV2();
-        setSyncStatusV2("loading", "Nacitavam...");
-
-        const qtyInput = document.getElementById("input-qty");
-        if (qtyInput) {
-          qtyInput.remove();
-        }
-
-        const nameInput = document.getElementById("input-name");
-        if (nameInput) {
-          nameInput.placeholder = "Co treba kupit?";
-          nameInput.style.flex = "1 1 auto";
-          nameInput.style.width = "100%";
-        }
-
-        replaceNodeWithHandler("btn-add", event => {
-          event.preventDefault();
-          const input = document.getElementById("input-name");
-          addItemV2(input ? input.value : "");
-          if (input) {
-            input.value = "";
-            input.focus();
-          }
-        });
-
-        if (nameInput) {
-          const replacement = nameInput.cloneNode(true);
-          nameInput.replaceWith(replacement);
-          replacement.addEventListener("keydown", event => {
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            addItemV2(replacement.value);
-            replacement.value = "";
-            replacement.focus();
-          });
-        }
-
-        fetchSheetsSnapshotV2(true)
-          .then(remoteItems => {
-            applyRemoteItemsV2(remoteItems || [], false);
-            syncStatusFromStateV2("Aktualne");
-          })
-          .catch(() => {
-            syncStatusFromStateV2(localStorage.getItem(SYNC_KEY) ? "Ulozene" : "Pripravene");
-          });
-
-        replaceNodeWithHandler("btn-sync", () => syncToSheetsV2(true));
-        replaceNodeWithHandler("btn-device-name", () => promptForDeviceLabelV2(true));
-        replaceNodeWithHandler("btn-mark-all-bottom", markAllBoughtV2);
-        replaceNodeWithHandler("btn-clear-checked", deleteCheckedV2);
-        updateDeviceNameButtonV2();
-        const saveButton = document.getElementById("btn-sync");
-        if (saveButton) {
-          saveButton.innerHTML = '<span class="icon">\uD83D\uDCBE</span><span>Ulozit</span>';
-        }
-      }
-
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", bootFinalSyncLayer);
-      } else {
-        bootFinalSyncLayer();
-      }
-    })();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", boot);
+    } else {
+      boot();
+    }
   </script>
 </body>
 </html>
