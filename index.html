@@ -561,9 +561,39 @@
         0 10px 22px rgba(15,23,42,.22);
     }
 
+    .item.remote-new.remote-mobile{
+      border-color:#fb7185;
+      box-shadow:
+        0 0 0 1px rgba(251,113,133,.5),
+        0 0 20px rgba(251,113,133,.36),
+        0 10px 22px rgba(15,23,42,.22);
+    }
+
+    .item.remote-new.remote-desktop{
+      border-color:#38bdf8;
+      box-shadow:
+        0 0 0 1px rgba(56,189,248,.58),
+        0 0 20px rgba(56,189,248,.5),
+        0 10px 22px rgba(15,23,42,.22);
+    }
+
     body.theme-dark .item.remote-new{
       box-shadow:
         0 0 0 1px rgba(56,189,248,.7),
+        0 0 22px rgba(56,189,248,.45),
+        0 10px 22px rgba(0,0,0,1);
+    }
+
+    body.theme-dark .item.remote-new.remote-mobile{
+      box-shadow:
+        0 0 0 1px rgba(251,113,133,.68),
+        0 0 22px rgba(251,113,133,.38),
+        0 10px 22px rgba(0,0,0,1);
+    }
+
+    body.theme-dark .item.remote-new.remote-desktop{
+      box-shadow:
+        0 0 0 1px rgba(56,189,248,.75),
         0 0 22px rgba(56,189,248,.45),
         0 10px 22px rgba(0,0,0,1);
     }
@@ -696,21 +726,6 @@
       transform:scale(1.01);
     }
 
-    .drag-handle{
-      touch-action:none;
-      cursor:grab;
-      min-width:42px;
-      justify-content:center;
-      font-size:1rem;
-      line-height:1;
-      letter-spacing:.08em;
-      user-select:none;
-    }
-
-    .drag-handle:active{
-      cursor:grabbing;
-    }
-
     .drag-placeholder{
       min-height:64px;
       border-radius:20px;
@@ -748,7 +763,31 @@
       color:#075985;
     }
 
+    .time-pill.remote-pill.mobile{
+      background:rgba(251,113,133,.14);
+      border-color:rgba(251,113,133,.38);
+      color:#9f1239;
+    }
+
+    .time-pill.remote-pill.desktop{
+      background:rgba(56,189,248,.15);
+      border-color:rgba(56,189,248,.4);
+      color:#075985;
+    }
+
     body.theme-dark .time-pill.remote-pill{
+      background:rgba(2,132,199,.22);
+      border-color:rgba(56,189,248,.55);
+      color:#bae6fd;
+    }
+
+    body.theme-dark .time-pill.remote-pill.mobile{
+      background:rgba(190,24,93,.22);
+      border-color:rgba(251,113,133,.5);
+      color:#fecdd3;
+    }
+
+    body.theme-dark .time-pill.remote-pill.desktop{
       background:rgba(2,132,199,.22);
       border-color:rgba(56,189,248,.55);
       color:#bae6fd;
@@ -923,8 +962,8 @@
       </section>
 
       <footer class="footer">
-        <div>Sync prebieha cez Google Sheets (jednoduché zdieľanie medzi mobilmi).</div>
         <div class="footer-right">
+          <button type="button" class="btn-text" id="btn-device-name">Zariadenie</button>
           <button type="button" class="btn-text" id="btn-mark-all-bottom">Odškrtnúť všetko</button>
           <button type="button" class="btn-text" id="btn-clear-checked">Vymazať odškrtnuté</button>
         </div>
@@ -1342,9 +1381,6 @@
             '<div>Pridaj prvu polozku, ktoru treba kupit.</div>'
           ].join("");
         }
-
-        const footer = document.querySelector(".footer > div");
-        if (footer) footer.textContent = "Sync prebieha cez Google Sheets (jednoduche zdielanie medzi mobilmi).";
 
         const markAllButton = document.getElementById("btn-mark-all-bottom");
         if (markAllButton) markAllButton.textContent = "Oznacit vsetko";
@@ -1823,17 +1859,117 @@
       const AUTO_SYNC_DELAY_V2 = 700;
       const REMOTE_CACHE_TTL_MS = 10000;
       const REMOTE_POLL_INTERVAL_MS = 15000;
+      const CARD_DRAG_HOLD_MS = 220;
+      const CARD_DRAG_MOVE_TOLERANCE = 10;
+      const DEVICE_STORAGE_KEY_V2 = "nakupny_zoznam_device_v2";
       let lastRemoteSnapshotV2 = [];
       let lastRemoteFetchedAtV2 = 0;
       let pendingSyncAfterCurrentV2 = false;
       let remotePollTimerV2 = null;
       let remotePollInFlightV2 = false;
-      let remoteHighlightIdsV2 = new Set();
+      let remoteHighlightMetaV2 = new Map();
       let remoteHighlightTimerV2 = null;
       let dragStateV2 = null;
+      let pendingCardDragV2 = null;
+      const LOCAL_DEVICE_V2 = loadLocalDeviceV2();
 
       function nowIso() {
         return new Date().toISOString();
+      }
+
+      function detectDeviceTypeV2() {
+        const ua = (navigator.userAgent || "").toLowerCase();
+        return /android|iphone|ipad|ipod|mobile/i.test(ua) ? "mobile" : "desktop";
+      }
+
+      function defaultDeviceLabelV2(type) {
+        return type === "mobile" ? "Mobil" : "PC";
+      }
+
+      function loadLocalDeviceV2() {
+        const fallbackType = detectDeviceTypeV2();
+
+        try {
+          const raw = localStorage.getItem(DEVICE_STORAGE_KEY_V2);
+          const parsed = raw ? JSON.parse(raw) : {};
+          const device = {
+            id: parsed && parsed.id ? String(parsed.id) : uid(),
+            type: parsed && parsed.type ? String(parsed.type) : fallbackType,
+            label: parsed && parsed.label ? String(parsed.label) : defaultDeviceLabelV2(fallbackType)
+          };
+          localStorage.setItem(DEVICE_STORAGE_KEY_V2, JSON.stringify(device));
+          return device;
+        } catch (error) {
+          return {
+            id: uid(),
+            type: fallbackType,
+            label: defaultDeviceLabelV2(fallbackType)
+          };
+        }
+      }
+
+      function persistLocalDeviceV2() {
+        localStorage.setItem(DEVICE_STORAGE_KEY_V2, JSON.stringify(LOCAL_DEVICE_V2));
+      }
+
+      function isGenericDeviceLabelV2(label, type) {
+        return !label || label === defaultDeviceLabelV2(type);
+      }
+
+      function hasCustomDeviceLabelV2() {
+        return !isGenericDeviceLabelV2(LOCAL_DEVICE_V2.label, LOCAL_DEVICE_V2.type);
+      }
+
+      function updateDeviceNameButtonV2() {
+        const button = document.getElementById("btn-device-name");
+        if (!button) return;
+        button.textContent = "Zariadenie: " + (LOCAL_DEVICE_V2.label || defaultDeviceLabelV2(LOCAL_DEVICE_V2.type));
+      }
+
+      function promptForDeviceLabelV2(force) {
+        const currentLabel = LOCAL_DEVICE_V2.label || defaultDeviceLabelV2(LOCAL_DEVICE_V2.type);
+        const suggested = hasCustomDeviceLabelV2()
+          ? currentLabel
+          : (LOCAL_DEVICE_V2.type === "mobile" ? "Domi" : "Peto");
+        const raw = window.prompt("Nazov tohto zariadenia", suggested);
+
+        if (raw === null) return false;
+
+        const nextLabel = raw.trim().slice(0, 24);
+        if (!nextLabel) {
+          if (force) {
+            showToast("Nazov ostal bez zmeny.", "\u2139\uFE0F");
+          }
+          return false;
+        }
+
+        LOCAL_DEVICE_V2.label = nextLabel;
+        persistLocalDeviceV2();
+        updateDeviceNameButtonV2();
+        showToast("Zariadenie: " + nextLabel, "\u2705");
+        return true;
+      }
+
+      function stampItemWithDeviceV2(item, timestamp) {
+        if (!item) return item;
+        item.updatedAt = timestamp || nowIso();
+        item.updatedById = LOCAL_DEVICE_V2.id;
+        item.updatedByType = LOCAL_DEVICE_V2.type;
+        item.updatedByLabel = LOCAL_DEVICE_V2.label;
+        return item;
+      }
+
+      function remoteDeviceTypeClassV2(type) {
+        return type === "mobile" ? "mobile" : "desktop";
+      }
+
+      function remoteDeviceBadgeTextV2(source) {
+        const label = source && source.updatedByLabel ? source.updatedByLabel : source && source.label ? source.label : "";
+        if (label) return "Od " + label;
+        const type = source && source.updatedByType ? source.updatedByType : source && source.type ? source.type : "";
+        if (type === "mobile") return "Z mobilu";
+        if (type === "desktop") return "Z PC";
+        return "Z ineho zariadenia";
       }
 
       function normalizeItemsV2(items) {
@@ -1851,7 +1987,10 @@
               boughtAt: item.boughtAt || null,
               updatedAt: item.updatedAt || item.boughtAt || TOMBSTONE_TS,
               deleted: item.deleted === true,
-              order: Number.isFinite(Number(item.order)) ? Number(item.order) : index
+              order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
+              updatedById: item.updatedById ? String(item.updatedById) : "",
+              updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
+              updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ""
             };
 
             const existing = merged.get(normalized.id);
@@ -1915,15 +2054,21 @@
         setSyncStatusV2("saving", "Ukladam...");
       }
 
-      function refreshRemoteHighlightsV2(ids) {
-        if (ids && ids.length) {
-          ids.forEach(id => remoteHighlightIdsV2.add(id));
+      function refreshRemoteHighlightsV2(items) {
+        if (items && items.length) {
+          items.forEach(item => {
+            remoteHighlightMetaV2.set(item.id, {
+              type: remoteDeviceTypeClassV2(item.updatedByType),
+              label: item.updatedByLabel || defaultDeviceLabelV2(item.updatedByType)
+            });
+          });
+          renderV2();
         }
         if (remoteHighlightTimerV2) {
           clearTimeout(remoteHighlightTimerV2);
         }
         remoteHighlightTimerV2 = setTimeout(() => {
-          remoteHighlightIdsV2.clear();
+          remoteHighlightMetaV2.clear();
           renderV2();
         }, 12000);
       }
@@ -1943,8 +2088,9 @@
       function showRemoteAddNotificationV2(addedItems) {
         if (!addedItems.length) return;
 
+        const source = addedItems[0];
         const label = addedItems.length === 1
-          ? "Pribudla polozka: " + addedItems[0].name
+          ? remoteDeviceBadgeTextV2(source) + ": " + addedItems[0].name
           : "Pribudli " + addedItems.length + " nove polozky";
 
         showToast(label, "\u{1F514}");
@@ -1955,8 +2101,8 @@
 
         try {
           const body = addedItems.length === 1
-            ? addedItems[0].name
-            : addedItems.slice(0, 3).map(item => item.name).join(", ");
+            ? remoteDeviceBadgeTextV2(source) + ": " + addedItems[0].name
+            : remoteDeviceBadgeTextV2(source) + " - " + addedItems.slice(0, 3).map(item => item.name).join(", ");
           const notification = new Notification("Nakupny zoznam", { body });
           setTimeout(() => notification.close(), 5000);
         } catch (error) {
@@ -1965,17 +2111,34 @@
       }
 
       function applyRemoteItemsV2(remoteItems, notifyAboutAdds) {
-        const localVisibleIds = visibleIdsV2(state.items || []);
+        const localItems = normalizeItemsV2(state.items || []);
+        const localMap = new Map(localItems.map(item => [item.id, item]));
         const remoteVisibleItems = normalizeItemsV2(remoteItems).filter(item => !item.deleted);
-        const addedItems = notifyAboutAdds
-          ? remoteVisibleItems.filter(item => !localVisibleIds.has(item.id))
-          : [];
+        const changedItems = remoteVisibleItems.filter(item => {
+          if (!item.updatedById || item.updatedById === LOCAL_DEVICE_V2.id) {
+            return false;
+          }
+
+          const local = localMap.get(item.id);
+          if (!local) {
+            return true;
+          }
+
+          return item.updatedAt !== local.updatedAt
+            || item.name !== local.name
+            || item.bought !== local.bought
+            || item.boughtAt !== local.boughtAt
+            || Number(item.order) !== Number(local.order);
+        });
+        const addedItems = changedItems.filter(item => !localMap.has(item.id));
 
         state.items = mergeItemsV2(state.items || [], remoteItems || []);
         saveAndRenderV2();
 
+        if (changedItems.length) {
+          refreshRemoteHighlightsV2(changedItems);
+        }
         if (notifyAboutAdds && addedItems.length) {
-          refreshRemoteHighlightsV2(addedItems.map(item => item.id));
           showRemoteAddNotificationV2(addedItems);
         }
       }
@@ -1996,6 +2159,7 @@
         const cont = document.getElementById("list-scroll");
         const empty = document.getElementById("empty-state");
         const visibleItems = visibleItemsV2();
+        cancelPendingCardDragV2();
         if (dragStateV2) {
           cancelActiveDragV2(false);
         }
@@ -2025,10 +2189,14 @@
       }
 
       function renderItemV2(it) {
+        const remoteMeta = remoteHighlightMetaV2.get(it.id);
         const card = document.createElement("div");
-        card.className = "item" + (it.bought ? " bought" : "") + (remoteHighlightIdsV2.has(it.id) ? " remote-new" : "");
+        card.className = "item"
+          + (it.bought ? " bought" : "")
+          + (remoteMeta ? " remote-new remote-" + remoteDeviceTypeClassV2(remoteMeta.type) : "");
         card.dataset.id = it.id;
         card.dataset.bought = it.bought ? "true" : "false";
+        card.addEventListener("pointerdown", event => queueCardDragV2(event, it.id));
 
         const check = document.createElement("div");
         check.className = "check";
@@ -2050,10 +2218,10 @@
 
         const meta = document.createElement("div");
         meta.className = "item-meta-row";
-        if (remoteHighlightIdsV2.has(it.id)) {
+        if (remoteMeta) {
           const remote = document.createElement("div");
-          remote.className = "time-pill remote-pill";
-          remote.textContent = "Z ineho zariadenia";
+          remote.className = "time-pill remote-pill " + remoteDeviceTypeClassV2(remoteMeta.type);
+          remote.textContent = remoteDeviceBadgeTextV2(remoteMeta);
           meta.appendChild(remote);
         }
         if (it.bought && it.boughtAt) {
@@ -2068,14 +2236,6 @@
 
         const actions = document.createElement("div");
         actions.className = "item-actions";
-        const dragHandle = document.createElement("button");
-        dragHandle.className = "btn-mini drag-handle";
-        dragHandle.innerHTML = "<span>\u2630</span>";
-        dragHandle.title = "Presunut";
-        dragHandle.type = "button";
-        dragHandle.setAttribute("aria-label", "Presunut polozku");
-        dragHandle.addEventListener("pointerdown", event => startDragV2(event, it.id));
-        actions.appendChild(dragHandle);
 
         const del = document.createElement("button");
         del.className = "btn-mini delete";
@@ -2104,6 +2264,86 @@
       function getBucketCardsV2(bought, excludeId) {
         return Array.from(document.querySelectorAll(bucketItemsSelectorV2(bought)))
           .filter(card => !excludeId || card.dataset.id !== excludeId);
+      }
+
+      function clearPendingCardDragTimerV2() {
+        if (pendingCardDragV2 && pendingCardDragV2.timer) {
+          clearTimeout(pendingCardDragV2.timer);
+        }
+      }
+
+      function removePendingCardDragListenersV2() {
+        window.removeEventListener("pointermove", monitorPendingCardDragV2);
+        window.removeEventListener("pointerup", cancelPendingCardDragFromEventV2);
+        window.removeEventListener("pointercancel", cancelPendingCardDragFromEventV2);
+      }
+
+      function cancelPendingCardDragV2() {
+        if (!pendingCardDragV2) return;
+        clearPendingCardDragTimerV2();
+        removePendingCardDragListenersV2();
+        pendingCardDragV2 = null;
+      }
+
+      function cancelPendingCardDragFromEventV2(event) {
+        if (!pendingCardDragV2) return;
+        if (event.pointerId !== pendingCardDragV2.pointerId) return;
+        cancelPendingCardDragV2();
+      }
+
+      function monitorPendingCardDragV2(event) {
+        if (!pendingCardDragV2) return;
+        if (event.pointerId !== pendingCardDragV2.pointerId) return;
+
+        pendingCardDragV2.currentX = event.clientX;
+        pendingCardDragV2.currentY = event.clientY;
+
+        const deltaX = Math.abs(event.clientX - pendingCardDragV2.startX);
+        const deltaY = Math.abs(event.clientY - pendingCardDragV2.startY);
+        if (deltaX > CARD_DRAG_MOVE_TOLERANCE || deltaY > CARD_DRAG_MOVE_TOLERANCE) {
+          cancelPendingCardDragV2();
+        }
+      }
+
+      function isCardDragBlockedTargetV2(target) {
+        const element = target instanceof Element ? target : target && target.parentElement;
+        return Boolean(element && element.closest(".check, .btn-mini.delete"));
+      }
+
+      function queueCardDragV2(event, id) {
+        if (event.button !== undefined && event.button !== 0) return;
+        if (dragStateV2) return;
+        if (isCardDragBlockedTargetV2(event.target)) return;
+
+        cancelPendingCardDragV2();
+
+        pendingCardDragV2 = {
+          id,
+          card: event.currentTarget,
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          currentX: event.clientX,
+          currentY: event.clientY,
+          timer: setTimeout(() => {
+            if (!pendingCardDragV2 || pendingCardDragV2.pointerId !== event.pointerId) return;
+            const payload = pendingCardDragV2;
+            cancelPendingCardDragV2();
+            startDragV2({
+              button: 0,
+              pointerId: payload.pointerId,
+              clientX: payload.currentX,
+              clientY: payload.currentY,
+              currentTarget: payload.card,
+              preventDefault() {},
+              stopPropagation() {}
+            }, payload.id);
+          }, CARD_DRAG_HOLD_MS)
+        };
+
+        window.addEventListener("pointermove", monitorPendingCardDragV2, { passive: true });
+        window.addEventListener("pointerup", cancelPendingCardDragFromEventV2, { passive: true });
+        window.addEventListener("pointercancel", cancelPendingCardDragFromEventV2, { passive: true });
       }
 
       function updateDragVisualPositionV2(clientY) {
@@ -2153,14 +2393,14 @@
       function cancelActiveDragV2(commitOrder) {
         if (!dragStateV2) return;
 
-        const { card, handle, placeholder, pointerId } = dragStateV2;
+        const { card, dragSource, placeholder, pointerId } = dragStateV2;
         window.removeEventListener("pointermove", moveDragV2);
         window.removeEventListener("pointerup", endDragV2);
         window.removeEventListener("pointercancel", endDragV2);
         document.body.classList.remove("drag-active");
 
         try {
-          handle.releasePointerCapture?.(pointerId);
+          dragSource.releasePointerCapture?.(pointerId);
         } catch (error) {}
 
         if (placeholder && placeholder.parentNode && card) {
@@ -2199,7 +2439,7 @@
           if (!item || item.deleted) return;
           if (item.order !== index) {
             item.order = index;
-            item.updatedAt = timestamp;
+            stampItemWithDeviceV2(item, timestamp);
             changed = true;
           }
         });
@@ -2212,12 +2452,13 @@
 
       function startDragV2(event, id) {
         if (event.button !== undefined && event.button !== 0) return;
+        cancelPendingCardDragV2();
         if (dragStateV2) {
           cancelActiveDragV2(false);
         }
 
-        const handle = event.currentTarget;
-        const card = handle.closest(".item");
+        const dragSource = event.currentTarget;
+        const card = dragSource.closest(".item");
         const list = document.getElementById("list-scroll");
         if (!card || !list) return;
 
@@ -2234,7 +2475,7 @@
 
         dragStateV2 = {
           id,
-          handle,
+          dragSource,
           card,
           list,
           placeholder,
@@ -2254,7 +2495,7 @@
         card.style.margin = "0";
         card.style.zIndex = "999";
 
-        handle.setPointerCapture?.(event.pointerId);
+        dragSource.setPointerCapture?.(event.pointerId);
         window.addEventListener("pointermove", moveDragV2, { passive: false });
         window.addEventListener("pointerup", endDragV2, { passive: false });
         window.addEventListener("pointercancel", endDragV2, { passive: false });
@@ -2308,8 +2549,8 @@
 
         current.order = swapOrder;
         swapItem.order = currentOrder;
-        current.updatedAt = timestamp;
-        swapItem.updatedAt = timestamp;
+        stampItemWithDeviceV2(current, timestamp);
+        stampItemWithDeviceV2(swapItem, timestamp);
 
         saveAndRenderV2();
         markUnsavedChangesV2();
@@ -2323,16 +2564,15 @@
           return;
         }
 
-        state.items.unshift({
+        state.items.unshift(stampItemWithDeviceV2({
           id: uid(),
           name: n,
           qty: "",
           bought: false,
           boughtAt: null,
-          updatedAt: nowIso(),
           deleted: false,
           order: Math.min(0, ...visibleItemsV2().map(item => item.order)) - 1
-        });
+        }));
         saveAndRenderV2();
         markUnsavedChangesV2();
         scheduleAutoSync();
@@ -2342,9 +2582,10 @@
       function toggleBoughtV2(id) {
         const it = state.items.find(item => item.id === id);
         if (!it || it.deleted) return;
+        const timestamp = nowIso();
         it.bought = !it.bought;
-        it.boughtAt = it.bought ? nowIso() : null;
-        it.updatedAt = nowIso();
+        it.boughtAt = it.bought ? timestamp : null;
+        stampItemWithDeviceV2(it, timestamp);
         saveAndRenderV2();
         markUnsavedChangesV2();
         scheduleAutoSync();
@@ -2356,7 +2597,7 @@
         if (!it || it.deleted) return;
         const name = it.name;
         it.deleted = true;
-        it.updatedAt = nowIso();
+        stampItemWithDeviceV2(it);
         saveAndRenderV2();
         markUnsavedChangesV2();
         scheduleAutoSync();
@@ -2374,7 +2615,7 @@
         const deletedAt = nowIso();
         itemsToDelete.forEach(item => {
           item.deleted = true;
-          item.updatedAt = deletedAt;
+          stampItemWithDeviceV2(item, deletedAt);
         });
         saveAndRenderV2();
         markUnsavedChangesV2();
@@ -2392,7 +2633,7 @@
         items.forEach(item => {
           item.bought = true;
           item.boughtAt = timestamp;
-          item.updatedAt = timestamp;
+          stampItemWithDeviceV2(item, timestamp);
         });
         saveAndRenderV2();
         markUnsavedChangesV2();
@@ -2533,6 +2774,7 @@
 
       function bootFinalSyncLayer() {
         state.items = normalizeItemsV2(state.items || []);
+        updateDeviceNameButtonV2();
 
         const statsNode = document.querySelector(".stats");
         if (statsNode) {
@@ -2616,8 +2858,10 @@
         });
 
         replaceNodeWithHandler("btn-sync", () => syncToSheetsV2(true));
+        replaceNodeWithHandler("btn-device-name", () => promptForDeviceLabelV2(true));
         replaceNodeWithHandler("btn-mark-all-bottom", markAllBoughtV2);
         replaceNodeWithHandler("btn-clear-checked", deleteCheckedV2);
+        updateDeviceNameButtonV2();
       }
 
       if (document.readyState === "loading") {
