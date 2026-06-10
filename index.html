@@ -1084,7 +1084,7 @@
     }
 
     function markAllBought() {
-      const items = visibleItems().filter(item => !item.bought);
+      const items = state.items.filter(item => item && !item.deleted && !item.bought);
       if (!items.length) {
         showToast("Nie je co oznacit.");
         return;
