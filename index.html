@@ -8,23 +8,23 @@
   <title>Nakupny zoznam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-1: #7c3aed;
+      --bg-1: #f472b6;
       --bg-2: #38bdf8;
-      --bg-3: #f472b6;
-      --panel: rgba(255, 255, 255, 0.9);
-      --panel-strong: rgba(255, 255, 255, 0.97);
+      --bg-3: #1d4ed8;
+      --panel: rgba(255, 255, 255, 0.94);
+      --panel-strong: rgba(255, 255, 255, 0.98);
       --text: #0f172a;
       --muted: #64748b;
-      --border: rgba(148, 163, 184, 0.22);
-      --shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
+      --border: rgba(148, 163, 184, 0.2);
       --accent: #0ea5e9;
       --accent-strong: #0284c7;
       --success: #16a34a;
       --danger: #ef4444;
-      --chip: rgba(226, 232, 240, 0.88);
+      --shadow: 0 22px 48px rgba(15, 23, 42, 0.18);
+      --chip: rgba(241, 245, 249, 0.95);
     }
 
     * {
@@ -32,20 +32,26 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       min-height: 100%;
+      scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+      display: none;
     }
 
     body {
       font-family: "Nunito", system-ui, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(244, 114, 182, 0.9), transparent 34%),
+        radial-gradient(circle at top left, rgba(244, 114, 182, 0.86), transparent 36%),
         radial-gradient(circle at top right, rgba(56, 189, 248, 0.9), transparent 34%),
-        radial-gradient(circle at bottom left, rgba(250, 204, 21, 0.55), transparent 30%),
-        linear-gradient(135deg, #0f172a, #1e1b4b 45%, #164e63);
-      padding: 18px 12px 26px;
+        linear-gradient(140deg, #0f172a, #1e1b4b 44%, #164e63);
+      padding: 16px 12px 26px;
     }
 
     .app {
@@ -55,77 +61,64 @@
     }
 
     .shell {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.9));
-      border: 1px solid rgba(255, 255, 255, 0.42);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92));
+      border: 1px solid rgba(255, 255, 255, 0.45);
       border-radius: 30px;
-      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+      box-shadow: var(--shadow);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       overflow: hidden;
     }
 
-    .header {
-      padding: 22px 20px 10px;
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 18px 8px;
     }
 
-    .header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
+    .title-wrap {
+      min-width: 0;
     }
 
     .title {
       margin: 0;
       font-family: "Baloo 2", system-ui, sans-serif;
-      font-size: 2.05rem;
+      font-size: 1.95rem;
       line-height: 1;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
     }
 
-    .subtitle {
-      margin-top: 6px;
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-
-    .header-actions {
+    .status-row {
+      margin-top: 8px;
       display: flex;
+      align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .sync-bar {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      padding: 4px 20px 0;
     }
 
     .status-pill {
-      min-height: 38px;
+      min-height: 28px;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 0 13px;
+      padding: 0 11px;
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.18);
       color: var(--muted);
-      font-size: 0.84rem;
-      font-weight: 700;
+      font-size: 0.78rem;
+      font-weight: 800;
     }
 
     .status-pill::before {
       content: "";
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
       background: #94a3b8;
-      box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.16);
+      box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.14);
     }
 
     .status-pill.loading::before {
@@ -148,15 +141,8 @@
       box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18);
     }
 
-    .sync-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
     .btn,
-    .btn-small,
-    .btn-text,
+    .icon-btn,
     .item-delete {
       appearance: none;
       border: none;
@@ -164,96 +150,99 @@
       font: inherit;
     }
 
-    .btn,
-    .btn-small {
-      min-height: 40px;
-      padding: 0 15px;
+    .icon-btn {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0 14px;
       border-radius: 999px;
-      font-weight: 800;
-      letter-spacing: 0.01em;
-      color: #fff;
-      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.18);
-    }
-
-    .btn.alt {
-      background: linear-gradient(135deg, #475569, #334155);
-      box-shadow: 0 10px 22px rgba(51, 65, 85, 0.14);
-    }
-
-    .btn-soft {
-      background: rgba(255, 255, 255, 0.85);
-      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(15, 23, 42, 0.07);
       color: var(--text);
-      box-shadow: none;
+      font-weight: 800;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
 
+    .icon-btn:active,
     .btn:active,
-    .btn-small:active,
-    .item-delete:active,
-    .btn-text:active {
+    .item-delete:active {
       transform: translateY(1px) scale(0.98);
     }
 
-    .device-button {
-      background: rgba(15, 23, 42, 0.08);
-      color: var(--text);
-      box-shadow: none;
+    .composer {
+      padding: 8px 18px 14px;
     }
 
-    .add-card,
-    .toolbar {
-      padding: 12px 20px 0;
-    }
-
-    .add-form {
+    .composer-form {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
-      align-items: stretch;
+      align-items: center;
+    }
+
+    .input-wrap {
+      position: relative;
     }
 
     .input {
       width: 100%;
       min-width: 0;
-      border: 1px solid rgba(203, 213, 225, 0.72);
-      border-radius: 18px;
-      padding: 14px 16px;
+      border: 1px solid rgba(203, 213, 225, 0.78);
+      border-radius: 20px;
+      padding: 16px 18px;
       font: inherit;
-      font-size: 1rem;
-      background: rgba(255, 255, 255, 0.92);
+      font-size: 1.05rem;
+      background: rgba(255, 255, 255, 0.96);
       color: var(--text);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
 
     .input:focus {
-      outline: 2px solid rgba(14, 165, 233, 0.18);
-      border-color: var(--accent);
+      outline: 2px solid rgba(14, 165, 233, 0.16);
+      border-color: rgba(14, 165, 233, 0.65);
     }
 
-    .toolbar-grid {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .btn-small {
-      min-height: 36px;
-      padding: 0 14px;
-      font-size: 0.84rem;
-    }
-
-    .btn-text {
-      background: transparent;
-      color: var(--danger);
-      text-decoration: underline;
-      font-size: 0.84rem;
-      font-weight: 700;
-      padding: 4px 0;
+    .btn-add {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #fff;
+      font-size: 1.7rem;
+      font-weight: 800;
+      box-shadow: 0 14px 28px rgba(14, 165, 233, 0.22);
     }
 
     .list-wrapper {
-      padding: 2px 20px 20px;
+      padding: 0 18px 18px;
+    }
+
+    .bottom-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+
+    .bottom-button {
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.94);
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    .bottom-button.danger {
+      color: #b91c1c;
+      background: rgba(254, 242, 242, 0.98);
+    }
+
+    .bottom-button:disabled {
+      opacity: 0.45;
+      cursor: default;
     }
 
     .pull-indicator {
@@ -263,46 +252,38 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8rem;
       color: var(--muted);
+      font-size: 0.8rem;
       transition: height 0.18s ease, opacity 0.18s ease;
     }
 
     .pull-indicator.active {
-      height: 42px;
+      height: 34px;
       opacity: 1;
     }
 
     .list {
-      min-height: 300px;
-      max-height: min(66vh, 720px);
-      overflow-y: auto;
-      padding: 0 1px 0 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      overscroll-behavior-y: contain;
+      gap: 10px;
+      min-height: 280px;
+      scrollbar-width: none;
     }
 
     .list::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .list::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.6);
-      border-radius: 999px;
+      display: none;
     }
 
     .group-title {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 4px 4px 0;
+      margin: 10px 4px 2px;
       color: var(--muted);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 800;
-      text-transform: uppercase;
       letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .group-title::before {
@@ -325,37 +306,36 @@
       gap: 12px;
       align-items: center;
       padding: 14px 14px 14px 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(226, 232, 240, 0.82);
-      background: rgba(255, 255, 255, 0.86);
-      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(226, 232, 240, 0.86);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
       cursor: pointer;
     }
 
     .item.bought {
       background: linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(220, 252, 231, 0.98));
-      border-color: rgba(134, 239, 172, 0.95);
+      border-color: rgba(134, 239, 172, 0.92);
     }
 
     .item-check {
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      border: 2px solid rgba(148, 163, 184, 0.9);
+      width: 36px;
+      height: 36px;
+      border-radius: 13px;
+      border: 2px solid rgba(148, 163, 184, 0.86);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
-      font-weight: 900;
+      background: rgba(255, 255, 255, 0.95);
       color: transparent;
-      background: rgba(255, 255, 255, 0.88);
+      font-weight: 900;
       flex-shrink: 0;
     }
 
     .item.bought .item-check {
-      color: #fff;
-      border-color: var(--success);
       background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-color: var(--success);
+      color: #fff;
     }
 
     .item-main {
@@ -366,14 +346,14 @@
     }
 
     .item-name {
-      font-size: 1.05rem;
+      font-size: 1.12rem;
       font-weight: 800;
       word-break: break-word;
     }
 
     .item.bought .item-name {
-      text-decoration: line-through;
       color: #166534;
+      text-decoration: line-through;
     }
 
     .item-meta {
@@ -390,45 +370,135 @@
       border-radius: 999px;
       background: var(--chip);
       color: var(--muted);
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       font-weight: 800;
     }
 
     .chip.source {
-      background: rgba(224, 242, 254, 0.98);
+      background: rgba(224, 242, 254, 0.96);
       color: #075985;
     }
 
     .item-delete {
-      width: 34px;
-      height: 34px;
+      width: 38px;
+      height: 38px;
       border-radius: 999px;
-      background: rgba(254, 226, 226, 0.8);
+      background: rgba(254, 226, 226, 0.86);
       color: #b91c1c;
-      font-size: 0.84rem;
+      font-size: 0.9rem;
       font-weight: 900;
       flex-shrink: 0;
     }
 
     .empty {
-      min-height: 240px;
+      min-height: 280px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
       gap: 8px;
+      padding: 22px;
       color: var(--muted);
       background: rgba(255, 255, 255, 0.56);
       border: 1px dashed rgba(148, 163, 184, 0.35);
       border-radius: 24px;
-      padding: 22px;
     }
 
     .empty-title {
       font-size: 1.05rem;
       font-weight: 900;
       color: var(--text);
+    }
+
+    .menu-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.36);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 40;
+    }
+
+    .menu-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .menu-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: min(560px, calc(100vw - 20px));
+      margin: 0 auto 10px;
+      padding: 16px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 26px 56px rgba(15, 23, 42, 0.26);
+      transform: translateY(110%);
+      transition: transform 0.24s ease;
+      z-index: 45;
+    }
+
+    .menu-sheet.open {
+      transform: translateY(0);
+    }
+
+    .sheet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .sheet-title {
+      font-family: "Baloo 2", system-ui, sans-serif;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .sheet-subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .sheet-close {
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .sheet-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sheet-button {
+      min-height: 48px;
+      padding: 0 16px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 16px;
+      background: rgba(248, 250, 252, 0.95);
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sheet-button.danger {
+      color: #b91c1c;
+      background: rgba(254, 242, 242, 0.98);
     }
 
     .toast {
@@ -457,33 +527,40 @@
 
     @media (max-width: 520px) {
       body {
-        padding: 12px 10px 18px;
+        padding: 10px 10px 20px;
       }
 
-      .header-row,
-      .sync-bar {
-        flex-direction: column;
-        align-items: stretch;
+      .topbar {
+        padding: 16px 16px 8px;
       }
 
-      .header-actions,
-      .sync-actions {
-        justify-content: stretch;
+      .composer,
+      .list-wrapper,
+      .bottom-actions {
+        padding-left: 16px;
+        padding-right: 16px;
       }
 
-      .header-actions > *,
-      .sync-actions > * {
-        width: 100%;
+      .title {
+        font-size: 1.78rem;
       }
 
-      .add-form {
+      .composer-form {
+        gap: 8px;
+      }
+
+      .input {
+        padding: 15px 16px;
+      }
+
+      .btn-add {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+      }
+
+      .bottom-actions {
         grid-template-columns: 1fr;
-      }
-
-      .btn,
-      .btn-small,
-      .device-button {
-        width: 100%;
       }
     }
   </style>
@@ -491,48 +568,55 @@
 <body>
   <div class="app">
     <div class="shell">
-      <header class="header">
-        <div class="header-row">
-          <div>
-            <h1 class="title">Nakupny zoznam</h1>
-            <div class="subtitle" id="device-summary">Zariadenie nie je nastavene</div>
-          </div>
-          <div class="header-actions">
-            <button type="button" class="btn btn-soft device-button" id="btn-device">Zariadenie</button>
+      <header class="topbar">
+        <div class="title-wrap">
+          <h1 class="title">Nakupny zoznam</h1>
+          <div class="status-row">
+            <div class="status-pill" id="sync-status-pill">
+              <span id="sync-status-text">Pripravene</span>
+            </div>
           </div>
         </div>
+        <button type="button" class="icon-btn" id="btn-menu">Viac</button>
       </header>
 
-      <section class="sync-bar">
-        <div class="status-pill" id="sync-status-pill">
-          <span id="sync-status-text">Pripravene</span>
-        </div>
-        <div class="sync-actions">
-          <button type="button" class="btn btn-soft" id="btn-load">Nacitat</button>
-          <button type="button" class="btn" id="btn-save">Ulozit</button>
-        </div>
-      </section>
-
-      <section class="add-card">
-        <form class="add-form" id="add-form">
-          <input class="input" id="input-name" type="text" autocomplete="off" placeholder="Co treba kupit?" />
-          <button type="submit" class="btn">Pridat</button>
+      <section class="composer">
+        <form id="add-form" class="composer-form">
+          <div class="input-wrap">
+            <input class="input" id="input-name" type="text" autocomplete="off" placeholder="Co treba kupit?" />
+          </div>
+          <button type="submit" class="btn btn-add" aria-label="Pridat">+</button>
         </form>
       </section>
 
-      <section class="toolbar">
-        <div class="toolbar-grid">
-          <button type="button" class="btn-small btn-soft" id="btn-mark-all">Oznacit vsetko</button>
-          <button type="button" class="btn-small btn-soft" id="btn-clear-checked">Vymazat odskrtnute</button>
-        </div>
+      <section class="list-wrapper">
+        <div class="pull-indicator" id="pull-indicator">Pusti pre obnovenie</div>
+        <div class="list" id="list"></div>
       </section>
 
-      <section class="list-wrapper">
-        <div class="pull-indicator" id="pull-indicator">Potiahni dole pre nacitanie</div>
-        <div class="list" id="list"></div>
+      <section class="bottom-actions">
+        <button type="button" class="bottom-button" id="btn-mark-all">Oznacit vsetko</button>
+        <button type="button" class="bottom-button danger" id="btn-clear-checked">Vymazat odskrtnute</button>
       </section>
     </div>
   </div>
+
+  <div class="menu-backdrop" id="menu-backdrop" hidden></div>
+
+  <aside class="menu-sheet" id="menu-sheet" aria-hidden="true">
+    <div class="sheet-head">
+      <div>
+        <div class="sheet-title">Viac</div>
+        <div class="sheet-subtitle" id="device-summary">Zariadenie nie je nastavene</div>
+      </div>
+      <button type="button" class="sheet-close" id="btn-close-menu">X</button>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="sheet-button" id="btn-device">Premenovat zariadenie</button>
+      <button type="button" class="sheet-button" id="btn-refresh">Nacitat zo Sheets</button>
+      <button type="button" class="sheet-button" id="btn-sync-now">Ulozit teraz</button>
+    </div>
+  </aside>
 
   <div class="toast" id="toast"></div>
 
@@ -541,15 +625,21 @@
     const SYNC_KEY = "nakupnyZoznam_neonMEGA_sync_ts";
     const DEVICE_KEY = "nakupny_zoznam_device_v2";
     const UNSAVED_KEY = "nakupny_zoznam_unsaved_v2";
-    const PULL_THRESHOLD = 78;
     const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbw260UlklkZ4KEtiTvfHtvRr_z3R1Te5Ne3Foch9e38nBuWaeo1Y9eRY7dLKqONmyquFg/exec";
+    const AUTO_SAVE_DELAY = 900;
+    const PULL_THRESHOLD = 88;
+    const FOREGROUND_SYNC_GAP = 8000;
 
     const state = {
       items: [],
       syncInProgress: false,
       unsaved: localStorage.getItem(UNSAVED_KEY) === "1",
+      toastTimer: null,
+      syncTimer: null,
+      syncQueued: false,
       pull: null,
-      toastTimer: null
+      menuOpen: false,
+      lastForegroundSyncAt: 0
     };
 
     const device = loadDevice();
@@ -703,48 +793,6 @@
       });
     }
 
-    function setUnsaved(flag) {
-      state.unsaved = Boolean(flag);
-      if (state.unsaved) {
-        localStorage.setItem(UNSAVED_KEY, "1");
-      } else {
-        localStorage.removeItem(UNSAVED_KEY);
-      }
-      updateStatusFromState();
-    }
-
-    function setStatus(mode, text) {
-      const pill = document.getElementById("sync-status-pill");
-      const label = document.getElementById("sync-status-text");
-      if (!pill || !label) return;
-
-      pill.classList.remove("loading", "synced", "saving", "error");
-      if (mode) {
-        pill.classList.add(mode);
-      }
-      label.textContent = text;
-    }
-
-    function updateStatusFromState() {
-      if (state.syncInProgress) return;
-
-      if (state.unsaved) {
-        setStatus("saving", "Neulozene zmeny");
-        return;
-      }
-
-      if (localStorage.getItem(SYNC_KEY)) {
-        setStatus("synced", "Ulozene");
-        return;
-      }
-
-      setStatus("", "Pripravene");
-    }
-
-    function touchSyncSuccess() {
-      localStorage.setItem(SYNC_KEY, nowIso());
-    }
-
     function showToast(message) {
       const toast = document.getElementById("toast");
       if (!toast) return;
@@ -761,18 +809,60 @@
       }, 1800);
     }
 
+    function setStatus(mode, text) {
+      const pill = document.getElementById("sync-status-pill");
+      const label = document.getElementById("sync-status-text");
+      if (!pill || !label) return;
+
+      pill.classList.remove("loading", "synced", "saving", "error");
+      if (mode) {
+        pill.classList.add(mode);
+      }
+      label.textContent = text;
+    }
+
+    function touchSyncSuccess() {
+      localStorage.setItem(SYNC_KEY, nowIso());
+      state.lastForegroundSyncAt = Date.now();
+    }
+
+    function setUnsaved(flag) {
+      state.unsaved = Boolean(flag);
+      if (state.unsaved) {
+        localStorage.setItem(UNSAVED_KEY, "1");
+      } else {
+        localStorage.removeItem(UNSAVED_KEY);
+      }
+      updateStatusFromState();
+    }
+
+    function updateStatusFromState() {
+      if (state.syncInProgress) return;
+
+      if (state.unsaved) {
+        if (state.syncTimer) {
+          setStatus("saving", "Ukladam...");
+          return;
+        }
+        setStatus("error", "Caka na ulozenie");
+        return;
+      }
+
+      if (localStorage.getItem(SYNC_KEY)) {
+        setStatus("synced", "Aktualne");
+        return;
+      }
+
+      setStatus("", "Pripravene");
+    }
+
     function updateDeviceUi() {
       const summary = document.getElementById("device-summary");
-      const headerButton = document.getElementById("btn-device");
       const label = device.label || defaultDeviceLabel(device.type);
       const typeText = device.type === "mobile" ? "mobil" : "PC";
 
       if (summary) {
-        summary.textContent = "Toto zariadenie: " + label + " (" + typeText + ")";
-      }
-
-      if (headerButton) {
-        headerButton.textContent = "Zariadenie: " + label;
+        summary.textContent = label + " (" + typeText + ")";
       }
     }
 
@@ -792,6 +882,7 @@
       device.label = next;
       saveDevice();
       updateDeviceUi();
+      closeMenu();
       showToast("Zariadenie nastavene.");
     }
 
@@ -879,9 +970,10 @@
         empty.className = "empty";
         empty.innerHTML = [
           '<div class="empty-title">Zoznam je prazdny</div>',
-          '<div>Pridaj prvu polozku alebo nacitaj data zo Sheets.</div>'
+          '<div>Pridaj prvu polozku a dalej to pojde samo.</div>'
         ].join("");
         list.appendChild(empty);
+        updateBulkActionState();
         return;
       }
 
@@ -890,12 +982,59 @@
 
       renderGroup(list, "Kupit", "", open);
       renderGroup(list, "Kupene", "done", done);
+      updateBulkActionState();
+    }
+
+    function updateBulkActionState() {
+      const markAllButton = document.getElementById("btn-mark-all");
+      const clearCheckedButton = document.getElementById("btn-clear-checked");
+      if (!markAllButton || !clearCheckedButton) return;
+
+      const items = visibleItems();
+      markAllButton.disabled = !items.some(item => !item.bought);
+      clearCheckedButton.disabled = !items.some(item => item.bought);
     }
 
     function nextTopOrder() {
       const items = visibleItems();
       if (!items.length) return 0;
       return Math.min(...items.map(item => Number.isFinite(Number(item.order)) ? Number(item.order) : 0)) - 1;
+    }
+
+    function scheduleAutoSave(delay) {
+      if (state.syncTimer) {
+        clearTimeout(state.syncTimer);
+      }
+
+      setUnsaved(true);
+      setStatus("saving", "Ukladam...");
+
+      state.syncTimer = setTimeout(() => {
+        state.syncTimer = null;
+        flushAutoSave(false);
+      }, typeof delay === "number" ? delay : AUTO_SAVE_DELAY);
+    }
+
+    function queueFollowupSync() {
+      state.syncQueued = true;
+    }
+
+    function flushAutoSave(showFeedback) {
+      if (!state.unsaved) {
+        return Promise.resolve(true);
+      }
+
+      if (state.syncTimer) {
+        clearTimeout(state.syncTimer);
+        state.syncTimer = null;
+      }
+
+      if (state.syncInProgress) {
+        queueFollowupSync();
+        return Promise.resolve(false);
+      }
+
+      return saveToSheets(Boolean(showFeedback));
     }
 
     function addItem(name) {
@@ -915,9 +1054,8 @@
       }));
 
       persistItems();
-      setUnsaved(true);
       render();
-      showToast("Polozka pridana.");
+      scheduleAutoSave();
     }
 
     function toggleBought(id) {
@@ -929,8 +1067,8 @@
       item.boughtAt = item.bought ? timestamp : null;
       stampItem(item, timestamp);
       persistItems();
-      setUnsaved(true);
       render();
+      scheduleAutoSave(500);
     }
 
     function deleteSingle(id) {
@@ -940,8 +1078,8 @@
       item.deleted = true;
       stampItem(item);
       persistItems();
-      setUnsaved(true);
       render();
+      scheduleAutoSave(500);
       showToast("Polozka vymazana.");
     }
 
@@ -960,8 +1098,9 @@
       });
 
       persistItems();
-      setUnsaved(true);
       render();
+      scheduleAutoSave(400);
+      closeMenu();
       showToast("Vsetko je oznacene.");
     }
 
@@ -979,8 +1118,9 @@
       });
 
       persistItems();
-      setUnsaved(true);
       render();
+      scheduleAutoSave(400);
+      closeMenu();
       showToast("Oznacene polozky vymazane.");
     }
 
@@ -1042,16 +1182,11 @@
     function loadFromSheets(showFeedback) {
       if (state.syncInProgress) return Promise.resolve(false);
       if (state.unsaved) {
-        if (showFeedback) {
-          showToast("Mas neulozene zmeny. Najprv uloz.");
-        }
-        updatePullIndicator(0, false);
-        return Promise.resolve(false);
+        return flushAutoSave(showFeedback);
       }
 
       state.syncInProgress = true;
-      setStatus("loading", "Nacitavam zo Sheets...");
-      updatePullIndicator(PULL_THRESHOLD, true);
+      setStatus("loading", "Nacitavam...");
 
       return fetchRemoteItems()
         .then(remoteItems => {
@@ -1085,7 +1220,7 @@
       if (state.syncInProgress) return Promise.resolve(false);
 
       state.syncInProgress = true;
-      setStatus("loading", "Ukladam do Sheets...");
+      setStatus("loading", "Ukladam...");
 
       return fetchRemoteItems()
         .then(remoteItems => {
@@ -1121,9 +1256,9 @@
           touchSyncSuccess();
           setUnsaved(false);
           render();
-          setStatus("synced", "Ulozene");
+          setStatus("synced", "Aktualne");
           if (showFeedback) {
-            showToast("Ulozene do Sheets.");
+            showToast("Ulozene.");
           }
           return true;
         })
@@ -1138,7 +1273,26 @@
         .finally(() => {
           state.syncInProgress = false;
           updateStatusFromState();
+          if (state.syncQueued) {
+            state.syncQueued = false;
+            if (state.unsaved) {
+              scheduleAutoSave(350);
+            }
+          }
         });
+    }
+
+    function refreshFromForeground(force) {
+      const now = Date.now();
+      if (!force && now - state.lastForegroundSyncAt < FOREGROUND_SYNC_GAP) {
+        return Promise.resolve(false);
+      }
+
+      if (state.unsaved) {
+        return flushAutoSave(false);
+      }
+
+      return loadFromSheets(false);
     }
 
     function updatePullIndicator(distance, loading) {
@@ -1147,33 +1301,28 @@
 
       if (loading) {
         indicator.classList.add("active");
-        indicator.textContent = "Nacitavam zo Sheets...";
+        indicator.textContent = "Nacitavam...";
         return;
       }
 
       if (!distance) {
         indicator.classList.remove("active");
-        indicator.textContent = "Potiahni dole pre nacitanie";
+        indicator.textContent = "Pusti pre obnovenie";
         return;
       }
 
       indicator.classList.add("active");
-      indicator.textContent = distance >= PULL_THRESHOLD ? "Pusti pre nacitanie" : "Potiahni dole pre nacitanie";
+      indicator.textContent = distance >= PULL_THRESHOLD ? "Pusti pre obnovenie" : "Potiahni este trochu";
     }
 
     function bindPullToRefresh() {
-      const list = document.getElementById("list");
-      if (!list || list.dataset.pullBound === "1") return;
-
-      list.dataset.pullBound = "1";
-
-      list.addEventListener("touchstart", event => {
-        if (state.syncInProgress || state.unsaved) return;
-        if (list.scrollTop > 0) return;
+      document.addEventListener("touchstart", event => {
+        if (state.syncInProgress) return;
+        if (window.scrollY > 0) return;
+        if (event.target.closest("button, input, .menu-sheet")) return;
 
         const touch = event.touches && event.touches[0];
         if (!touch) return;
-        if (event.target.closest("button, input")) return;
 
         state.pull = {
           startY: touch.clientY,
@@ -1181,14 +1330,14 @@
         };
       }, { passive: true });
 
-      list.addEventListener("touchmove", event => {
+      document.addEventListener("touchmove", event => {
         if (!state.pull) return;
 
         const touch = event.touches && event.touches[0];
         if (!touch) return;
 
         const delta = touch.clientY - state.pull.startY;
-        if (delta <= 0 || list.scrollTop > 0) {
+        if (delta <= 0 || window.scrollY > 0) {
           state.pull = null;
           updatePullIndicator(0, false);
           return;
@@ -1199,24 +1348,55 @@
         event.preventDefault();
       }, { passive: false });
 
-      list.addEventListener("touchend", () => {
+      document.addEventListener("touchend", () => {
         if (!state.pull) return;
 
-        const shouldLoad = state.pull.distance >= PULL_THRESHOLD;
+        const shouldRefresh = state.pull.distance >= PULL_THRESHOLD;
         state.pull = null;
 
-        if (shouldLoad) {
-          loadFromSheets(true);
+        if (shouldRefresh) {
+          updatePullIndicator(PULL_THRESHOLD, true);
+          refreshFromForeground(true);
           return;
         }
 
         updatePullIndicator(0, false);
       }, { passive: true });
 
-      list.addEventListener("touchcancel", () => {
+      document.addEventListener("touchcancel", () => {
         state.pull = null;
         updatePullIndicator(0, false);
       }, { passive: true });
+    }
+
+    function openMenu() {
+      const backdrop = document.getElementById("menu-backdrop");
+      const sheet = document.getElementById("menu-sheet");
+      if (!backdrop || !sheet) return;
+
+      state.menuOpen = true;
+      backdrop.hidden = false;
+      requestAnimationFrame(() => {
+        backdrop.classList.add("open");
+        sheet.classList.add("open");
+        sheet.setAttribute("aria-hidden", "false");
+      });
+    }
+
+    function closeMenu() {
+      const backdrop = document.getElementById("menu-backdrop");
+      const sheet = document.getElementById("menu-sheet");
+      if (!backdrop || !sheet) return;
+
+      state.menuOpen = false;
+      backdrop.classList.remove("open");
+      sheet.classList.remove("open");
+      sheet.setAttribute("aria-hidden", "true");
+      setTimeout(() => {
+        if (!state.menuOpen) {
+          backdrop.hidden = true;
+        }
+      }, 220);
     }
 
     function registerServiceWorker() {
@@ -1237,15 +1417,7 @@
         });
     }
 
-    function boot() {
-      state.items = loadLocalItems();
-
-      updateDeviceUi();
-      render();
-      updateStatusFromState();
-      bindPullToRefresh();
-      registerServiceWorker();
-
+    function bindEvents() {
       document.getElementById("add-form").addEventListener("submit", event => {
         event.preventDefault();
         const input = document.getElementById("input-name");
@@ -1254,18 +1426,59 @@
         input.focus();
       });
 
-      document.getElementById("btn-save").addEventListener("click", () => {
-        saveToSheets(true);
+      document.getElementById("btn-menu").addEventListener("click", openMenu);
+      document.getElementById("btn-close-menu").addEventListener("click", closeMenu);
+      document.getElementById("menu-backdrop").addEventListener("click", closeMenu);
+      document.getElementById("btn-device").addEventListener("click", promptForDeviceName);
+      document.getElementById("btn-refresh").addEventListener("click", () => {
+        closeMenu();
+        refreshFromForeground(true).then(result => {
+          if (result) {
+            showToast("Obnovene.");
+          }
+        });
       });
-
-      document.getElementById("btn-load").addEventListener("click", () => {
-        loadFromSheets(true);
+      document.getElementById("btn-sync-now").addEventListener("click", () => {
+        closeMenu();
+        flushAutoSave(true);
       });
-
       document.getElementById("btn-mark-all").addEventListener("click", markAllBought);
       document.getElementById("btn-clear-checked").addEventListener("click", clearChecked);
-      document.getElementById("btn-device").addEventListener("click", promptForDeviceName);
-      if (!state.unsaved) {
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && state.menuOpen) {
+          closeMenu();
+        }
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          refreshFromForeground(false);
+        }
+      });
+
+      window.addEventListener("focus", () => {
+        refreshFromForeground(false);
+      });
+
+      window.addEventListener("online", () => {
+        refreshFromForeground(true);
+      });
+    }
+
+    function boot() {
+      state.items = loadLocalItems();
+
+      updateDeviceUi();
+      render();
+      updateStatusFromState();
+      bindEvents();
+      bindPullToRefresh();
+      registerServiceWorker();
+
+      if (state.unsaved) {
+        scheduleAutoSave(600);
+      } else {
         loadFromSheets(false);
       }
     }
