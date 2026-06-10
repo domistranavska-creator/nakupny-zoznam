@@ -495,6 +495,40 @@
       border-radius:999px;
     }
 
+    .pull-refresh-indicator{
+      height:0;
+      opacity:0;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:.78rem;
+      color:var(--text-muted);
+      transition:height .18s ease,opacity .18s ease,color .18s ease;
+    }
+
+    .pull-refresh-indicator.ready{
+      color:#0284c7;
+    }
+
+    .pull-refresh-indicator.loading{
+      height:42px;
+      opacity:1;
+      color:#0f766e;
+    }
+
+    body.theme-dark .pull-refresh-indicator{
+      color:#9ca3af;
+    }
+
+    body.theme-dark .pull-refresh-indicator.ready{
+      color:#7dd3fc;
+    }
+
+    body.theme-dark .pull-refresh-indicator.loading{
+      color:#99f6e4;
+    }
+
     .group-title{
       margin:3px 6px 1px;
       font-size:.8rem;
@@ -934,7 +968,7 @@
           </div>
           <div class="sync-actions">
             <button type="button" class="btn-mini" id="btn-sync">
-              <span class="icon">🔄</span><span>Sync so Sheets</span>
+              <span class="icon">💾</span><span>Uložiť</span>
             </button>
           </div>
         </div>
@@ -951,6 +985,7 @@
       </section>
 
       <section class="list-wrapper">
+        <div id="pull-refresh" class="pull-refresh-indicator">Potiahni dole pre načítanie</div>
         <div id="list-scroll" class="list-scroll">
           <div id="empty-state" class="empty-state">
             <div class="empty-emoji">🧺</div>
@@ -1367,7 +1402,7 @@
         if (themeButton) themeButton.title = "Svetly / tmavy rezim";
 
         const syncButton = document.getElementById("btn-sync");
-        if (syncButton) syncButton.innerHTML = '<span class="icon">&#128260;</span><span>Sync so Sheets</span>';
+        if (syncButton) syncButton.innerHTML = '<span class="icon">&#128190;</span><span>Ulozit</span>';
 
         const nameInput = document.getElementById("input-name");
         if (nameInput) nameInput.placeholder = "Co treba kupit? (mlieko, chlieb...)";
@@ -1856,21 +1891,21 @@
   <script>
     (function () {
       const TOMBSTONE_TS = "1970-01-01T00:00:00.000Z";
-      const AUTO_SYNC_DELAY_V2 = 700;
       const REMOTE_CACHE_TTL_MS = 10000;
-      const REMOTE_POLL_INTERVAL_MS = 15000;
-      const CARD_DRAG_HOLD_MS = 220;
-      const CARD_DRAG_MOVE_TOLERANCE = 10;
+      const CARD_DRAG_HOLD_MS = 190;
+      const CARD_DRAG_MOVE_TOLERANCE = 22;
+      const PULL_REFRESH_THRESHOLD_V2 = 72;
       const DEVICE_STORAGE_KEY_V2 = "nakupny_zoznam_device_v2";
+      const UNSAVED_KEY_V2 = "nakupny_zoznam_unsaved_v2";
       let lastRemoteSnapshotV2 = [];
       let lastRemoteFetchedAtV2 = 0;
-      let pendingSyncAfterCurrentV2 = false;
-      let remotePollTimerV2 = null;
       let remotePollInFlightV2 = false;
       let remoteHighlightMetaV2 = new Map();
       let remoteHighlightTimerV2 = null;
       let dragStateV2 = null;
       let pendingCardDragV2 = null;
+      let pullRefreshStateV2 = null;
+      let hasUnsavedChangesV2 = localStorage.getItem(UNSAVED_KEY_V2) === "1";
       const LOCAL_DEVICE_V2 = loadLocalDeviceV2();
 
       function nowIso() {
@@ -1972,6 +2007,18 @@
         return "Z ineho zariadenia";
       }
 
+      function itemSourceMetaV2(item) {
+        if (!item || !item.updatedById || item.updatedById === LOCAL_DEVICE_V2.id) {
+          return null;
+        }
+
+        return {
+          updatedById: item.updatedById,
+          updatedByType: remoteDeviceTypeClassV2(item.updatedByType),
+          updatedByLabel: item.updatedByLabel || defaultDeviceLabelV2(item.updatedByType)
+        };
+      }
+
       function normalizeItemsV2(items) {
         if (!Array.isArray(items)) return [];
 
@@ -2051,16 +2098,130 @@
       }
 
       function markUnsavedChangesV2() {
-        setSyncStatusV2("saving", "Ukladam...");
+        hasUnsavedChangesV2 = true;
+        localStorage.setItem(UNSAVED_KEY_V2, "1");
+        setSyncStatusV2("saving", "Neulozene zmeny");
+      }
+
+      function clearUnsavedChangesV2() {
+        hasUnsavedChangesV2 = false;
+        localStorage.removeItem(UNSAVED_KEY_V2);
+      }
+
+      function syncStatusFromStateV2(labelWhenClean) {
+        if (hasUnsavedChangesV2) {
+          setSyncStatusV2("saving", "Neulozene zmeny");
+          return;
+        }
+
+        setSyncStatusV2("synced", labelWhenClean || "Aktualne");
+      }
+
+      function updatePullRefreshIndicatorV2(distance, mode) {
+        const indicator = document.getElementById("pull-refresh");
+        if (!indicator) return;
+
+        indicator.classList.remove("ready", "loading");
+
+        if (mode === "loading") {
+          indicator.classList.add("loading");
+          indicator.style.height = "42px";
+          indicator.style.opacity = "1";
+          indicator.textContent = "Nacitavam zo Sheets...";
+          return;
+        }
+
+        const clamped = Math.max(0, Math.min(distance || 0, 96));
+        indicator.style.height = `${Math.min(48, Math.round(clamped * 0.65))}px`;
+        indicator.style.opacity = clamped > 4 ? "1" : "0";
+
+        if (!clamped) {
+          indicator.textContent = "Potiahni dole pre nacitanie";
+          return;
+        }
+
+        if (clamped >= PULL_REFRESH_THRESHOLD_V2) {
+          indicator.classList.add("ready");
+          indicator.textContent = "Pusti pre nacitanie";
+          return;
+        }
+
+        indicator.textContent = "Potiahni dole pre nacitanie";
+      }
+
+      function isPullRefreshBlockedTargetV2(target) {
+        const element = target instanceof Element ? target : target && target.parentElement;
+        return Boolean(element && element.closest(".check, .btn-mini, input, button"));
+      }
+
+      function beginPullRefreshGestureV2(event) {
+        const list = document.getElementById("list-scroll");
+        if (!list || dragStateV2 || pendingCardDragV2 || isSyncInProgress) return;
+        if (list.scrollTop > 0) return;
+
+        const touch = event.touches && event.touches[0];
+        if (!touch) return;
+        if (isPullRefreshBlockedTargetV2(event.target)) return;
+
+        pullRefreshStateV2 = {
+          startY: touch.clientY,
+          distance: 0,
+          ready: false
+        };
+      }
+
+      function movePullRefreshGestureV2(event) {
+        if (!pullRefreshStateV2) return;
+
+        const list = document.getElementById("list-scroll");
+        const touch = event.touches && event.touches[0];
+        if (!list || !touch) return;
+
+        const delta = touch.clientY - pullRefreshStateV2.startY;
+        if (delta <= 0 || list.scrollTop > 0) {
+          pullRefreshStateV2 = null;
+          updatePullRefreshIndicatorV2(0);
+          return;
+        }
+
+        const distance = Math.min(110, delta * 0.65);
+        if (distance > 8) {
+          cancelPendingCardDragV2();
+        }
+        pullRefreshStateV2.distance = distance;
+        pullRefreshStateV2.ready = distance >= PULL_REFRESH_THRESHOLD_V2;
+        updatePullRefreshIndicatorV2(distance);
+        event.preventDefault();
+      }
+
+      function endPullRefreshGestureV2() {
+        if (!pullRefreshStateV2) return;
+        const shouldRefresh = pullRefreshStateV2.ready;
+        pullRefreshStateV2 = null;
+
+        if (shouldRefresh) {
+          refreshFromSheetsV2(true);
+          return;
+        }
+
+        updatePullRefreshIndicatorV2(0);
+      }
+
+      function bindPullRefreshV2() {
+        const list = document.getElementById("list-scroll");
+        if (!list || list.dataset.pullRefreshBound === "1") return;
+
+        list.dataset.pullRefreshBound = "1";
+        list.addEventListener("touchstart", beginPullRefreshGestureV2, { passive: true });
+        list.addEventListener("touchmove", movePullRefreshGestureV2, { passive: false });
+        list.addEventListener("touchend", endPullRefreshGestureV2, { passive: true });
+        list.addEventListener("touchcancel", endPullRefreshGestureV2, { passive: true });
       }
 
       function refreshRemoteHighlightsV2(items) {
         if (items && items.length) {
           items.forEach(item => {
-            remoteHighlightMetaV2.set(item.id, {
-              type: remoteDeviceTypeClassV2(item.updatedByType),
-              label: item.updatedByLabel || defaultDeviceLabelV2(item.updatedByType)
-            });
+            remoteHighlightMetaV2.set(item.id, remoteDeviceTypeClassV2(item.updatedByType));
           });
           renderV2();
         }
@@ -2085,6 +2246,57 @@
         document.addEventListener("keydown", handler, { once: true });
       }
 
+      function vibrateFeedbackV2(pattern) {
+        try {
+          if (navigator.vibrate) {
+            navigator.vibrate(pattern);
+          }
+        } catch (error) {}
+      }
+
+      function showSystemNotificationV2(title, body) {
+        if (!("Notification" in window) || Notification.permission !== "granted") {
+          return Promise.resolve(false);
+        }
+
+        const fallback = () => {
+          try {
+            const notification = new Notification(title, {
+              body,
+              tag: "nakupny-zoznam-remote"
+            });
+            setTimeout(() => notification.close(), 6000);
+            return true;
+          } catch (error) {
+            console.error(error);
+            return false;
+          }
+        };
+
+        if (!("serviceWorker" in navigator)) {
+          return Promise.resolve(fallback());
+        }
+
+        return navigator.serviceWorker.ready
+          .then(registration => {
+            if (!registration || !registration.showNotification) {
+              return fallback();
+            }
+
+            return registration.showNotification(title, {
+              body,
+              tag: "nakupny-zoznam-remote",
+              renotify: true,
+              icon: "./icons/icon_web_256_256.png",
+              badge: "./icons/icon_android_xhdpi_96.png"
+            }).then(() => true);
+          })
+          .catch(error => {
+            console.error(error);
+            return fallback();
+          });
+      }
+
       function showRemoteAddNotificationV2(addedItems) {
         if (!addedItems.length) return;
 
@@ -2094,20 +2306,17 @@
           : "Pribudli " + addedItems.length + " nove polozky";
 
         showToast(label, "\u{1F514}");
+        vibrateFeedbackV2([120, 60, 120]);
 
         if (!("Notification" in window) || Notification.permission !== "granted") {
           return;
         }
 
-        try {
-          const body = addedItems.length === 1
-            ? remoteDeviceBadgeTextV2(source) + ": " + addedItems[0].name
-            : remoteDeviceBadgeTextV2(source) + " - " + addedItems.slice(0, 3).map(item => item.name).join(", ");
-          const notification = new Notification("Nakupny zoznam", { body });
-          setTimeout(() => notification.close(), 5000);
-        } catch (error) {
-          console.error(error);
-        }
+        const body = addedItems.length === 1
+          ? remoteDeviceBadgeTextV2(source) + ": " + addedItems[0].name
+          : remoteDeviceBadgeTextV2(source) + " - " + addedItems.slice(0, 3).map(item => item.name).join(", ");
+
+        showSystemNotificationV2("Nakupny zoznam", body).catch(console.error);
       }
 
       function applyRemoteItemsV2(remoteItems, notifyAboutAdds) {
@@ -2189,11 +2398,12 @@
       }
 
       function renderItemV2(it) {
-        const remoteMeta = remoteHighlightMetaV2.get(it.id);
+        const remoteGlowType = remoteHighlightMetaV2.get(it.id);
+        const sourceMeta = itemSourceMetaV2(it);
         const card = document.createElement("div");
         card.className = "item"
           + (it.bought ? " bought" : "")
-          + (remoteMeta ? " remote-new remote-" + remoteDeviceTypeClassV2(remoteMeta.type) : "");
+          + (remoteGlowType ? " remote-new remote-" + remoteGlowType : "");
         card.dataset.id = it.id;
         card.dataset.bought = it.bought ? "true" : "false";
         card.addEventListener("pointerdown", event => queueCardDragV2(event, it.id));
@@ -2218,10 +2428,10 @@
 
         const meta = document.createElement("div");
         meta.className = "item-meta-row";
-        if (remoteMeta) {
+        if (sourceMeta) {
           const remote = document.createElement("div");
-          remote.className = "time-pill remote-pill " + remoteDeviceTypeClassV2(remoteMeta.type);
-          remote.textContent = remoteDeviceBadgeTextV2(remoteMeta);
+          remote.className = "time-pill remote-pill " + remoteDeviceTypeClassV2(sourceMeta.updatedByType);
+          remote.textContent = remoteDeviceBadgeTextV2(sourceMeta);
           meta.appendChild(remote);
         }
         if (it.bought && it.boughtAt) {
@@ -2495,10 +2705,10 @@
         card.style.margin = "0";
         card.style.zIndex = "999";
 
-        dragSource.setPointerCapture?.(event.pointerId);
         window.addEventListener("pointermove", moveDragV2, { passive: false });
         window.addEventListener("pointerup", endDragV2, { passive: false });
         window.addEventListener("pointercancel", endDragV2, { passive: false });
+        vibrateFeedbackV2(18);
       }
 
       function moveDragV2(event) {
@@ -2676,29 +2886,42 @@
         return next();
       }
 
-      function pollRemoteChangesV2(forceRefresh) {
-        if (remotePollInFlightV2 || isSyncInProgress || dragStateV2) return Promise.resolve();
+      function refreshFromSheetsV2(showFeedback) {
+        if (remotePollInFlightV2 || isSyncInProgress || dragStateV2 || pendingCardDragV2) return Promise.resolve(false);
         remotePollInFlightV2 = true;
+        updatePullRefreshIndicatorV2(0, "loading");
+        setSyncStatusV2("loading", "Nacitavam zo Sheets...");
 
-        return fetchSheetsSnapshotV2(Boolean(forceRefresh))
+        return fetchSheetsSnapshotV2(true)
           .then(remoteItems => {
-            applyRemoteItemsV2(remoteItems || [], true);
+            applyRemoteItemsV2(remoteItems || [], false);
+            syncStatusFromStateV2("Aktualne");
+            if (showFeedback) {
+              showToast("Nacitane zo Sheets.", "\u21BB");
+            }
+            return true;
           })
           .catch(error => {
             console.error(error);
+            syncStatusFromStateV2(localStorage.getItem(SYNC_KEY) ? "Ulozene" : "Pripravene");
+            if (showFeedback) {
+              showToast("Nacitavanie zlyhalo.", "\u26A0\uFE0F");
+            }
+            return false;
           })
           .finally(() => {
             remotePollInFlightV2 = false;
+            if (!pullRefreshStateV2) {
+              setTimeout(() => updatePullRefreshIndicatorV2(0), 140);
+            }
           });
       }
 
       function syncToSheetsV2(showFeedback) {
         if (isSyncInProgress) {
-          pendingSyncAfterCurrentV2 = true;
-          return;
+          return Promise.resolve();
         }
         isSyncInProgress = true;
-        pendingSyncAfterCurrentV2 = false;
         clearTimeout(autoSyncTimer);
 
         const pill = document.getElementById("sync-pill");
@@ -2706,7 +2929,7 @@
           pill.classList.add("loading");
           pill.classList.remove("synced");
         }
-        setSyncStatusV2("loading", "Synchronizujem...");
+        setSyncStatusV2("loading", "Ukladam do Sheets...");
 
         fetchSheetsSnapshotV2(Boolean(showFeedback))
           .then(remoteItems => {
@@ -2728,39 +2951,30 @@
           .then(items => {
             applyRemoteItemsV2(items || [], false);
             exportSyncTimestampSuccess(Boolean(showFeedback));
+            clearUnsavedChangesV2();
             setSyncStatusV2("synced", "Ulozene");
-            if (showFeedback) showToast("Sync so Sheets hotovy.", "\u2705");
+            if (showFeedback) showToast("Ulozene do Sheets.", "\u2705");
           })
           .catch(error => {
             console.error(error);
             const hasVisibleItems = visibleItemsV2().length > 0;
             if (!hasVisibleItems) {
               exportSyncTimestampSuccess(false);
+              clearUnsavedChangesV2();
               setSyncStatusV2("synced", "Ulozene");
-              if (showFeedback) showToast("Zoznam je vymazany a ulozeny.", "\u2705");
+              if (showFeedback) showToast("Zoznam je ulozeny.", "\u2705");
               return;
             }
-            if (showFeedback) {
-              setSyncStatusV2("error", "Sync chyba");
-              showToast("Sync zlyhal. Skus neskor.", "\u26A0\uFE0F");
-            } else {
-              setSyncStatusV2("saving", "Caka na siet");
-            }
+            setSyncStatusV2("error", "Ukladanie zlyhalo");
+            if (showFeedback) showToast("Ulozenie zlyhalo. Skus neskor.", "\u26A0\uFE0F");
           })
           .finally(() => {
             isSyncInProgress = false;
-            if (pendingSyncAfterCurrentV2) {
-              pendingSyncAfterCurrentV2 = false;
-              clearTimeout(autoSyncTimer);
-              autoSyncTimer = setTimeout(() => syncToSheetsV2(false), 50);
-            }
           });
       }
 
       function scheduleAutoSyncV2() {
-        if (!SHEETS_SYNC_URL || SHEETS_SYNC_URL === "PASTE_WEB_APP_URL_HERE") return;
         clearTimeout(autoSyncTimer);
-        autoSyncTimer = setTimeout(() => syncToSheetsV2(false), AUTO_SYNC_DELAY_V2);
       }
 
       function replaceNodeWithHandler(id, handler) {
@@ -2795,6 +3009,7 @@
 
         renderV2();
         enableNotificationPromptOnInteractionV2();
+        bindPullRefreshV2();
         setSyncStatusV2("loading", "Nacitavam...");
 
         const qtyInput = document.getElementById("input-qty");
@@ -2834,34 +3049,21 @@
         fetchSheetsSnapshotV2(true)
           .then(remoteItems => {
             applyRemoteItemsV2(remoteItems || [], false);
-            exportSyncTimestampSuccess(false);
-            setSyncStatusV2("synced", "Ulozene");
+            syncStatusFromStateV2("Aktualne");
           })
           .catch(() => {
-            setSyncStatusV2(localStorage.getItem(SYNC_KEY) ? "synced" : "saving", localStorage.getItem(SYNC_KEY) ? "Ulozene" : "Pripravene");
+            syncStatusFromStateV2(localStorage.getItem(SYNC_KEY) ? "Ulozene" : "Pripravene");
           });
-
-        if (remotePollTimerV2) {
-          clearInterval(remotePollTimerV2);
-        }
-        remotePollTimerV2 = setInterval(() => {
-          pollRemoteChangesV2(true);
-        }, REMOTE_POLL_INTERVAL_MS);
-
-        document.addEventListener("visibilitychange", () => {
-          if (!document.hidden) {
-            setSyncStatusV2("loading", "Nacitavam...");
-            pollRemoteChangesV2(true).finally(() => {
-              setSyncStatusV2("synced", "Ulozene");
-            });
-          }
-        });
 
         replaceNodeWithHandler("btn-sync", () => syncToSheetsV2(true));
         replaceNodeWithHandler("btn-device-name", () => promptForDeviceLabelV2(true));
         replaceNodeWithHandler("btn-mark-all-bottom", markAllBoughtV2);
         replaceNodeWithHandler("btn-clear-checked", deleteCheckedV2);
         updateDeviceNameButtonV2();
+        const saveButton = document.getElementById("btn-sync");
+        if (saveButton) {
+          saveButton.innerHTML = '<span class="icon">\uD83D\uDCBE</span><span>Ulozit</span>';
+        }
       }
 
       if (document.readyState === "loading") {
