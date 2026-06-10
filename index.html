@@ -282,6 +282,30 @@
       box-shadow:0 0 8px rgba(34,197,94,1);
     }
 
+    .sync-status-pill.saving{
+      background:radial-gradient(circle at 0 0,#fef3c7,#f59e0b);
+      color:#78350f;
+      border-color:#f59e0b;
+      box-shadow:0 0 0 1px rgba(245,158,11,.45),0 0 16px rgba(245,158,11,.35);
+    }
+
+    .sync-status-pill.saving .dot{
+      background:#f59e0b;
+      box-shadow:0 0 8px rgba(245,158,11,.75);
+    }
+
+    .sync-status-pill.error{
+      background:radial-gradient(circle at 0 0,#fee2e2,#ef4444);
+      color:#7f1d1d;
+      border-color:#ef4444;
+      box-shadow:0 0 0 1px rgba(239,68,68,.45),0 0 16px rgba(239,68,68,.35);
+    }
+
+    .sync-status-pill.error .dot{
+      background:#ef4444;
+      box-shadow:0 0 8px rgba(239,68,68,.75);
+    }
+
     .sync-status-pill.loading .dot{
       background:#facc15;
     }
@@ -312,6 +336,12 @@
     .btn-mini:active{
       transform:scale(.94) translateY(1px);
       box-shadow:0 3px 7px rgba(15,23,42,.65);
+    }
+
+    .btn-mini[disabled]{
+      opacity:.35;
+      pointer-events:none;
+      box-shadow:none;
     }
 
     .add-card{
@@ -523,6 +553,21 @@
       box-shadow:0 9px 22px rgba(22,163,74,1);
     }
 
+    .item.remote-new{
+      border-color:#38bdf8;
+      box-shadow:
+        0 0 0 1px rgba(56,189,248,.55),
+        0 0 20px rgba(56,189,248,.5),
+        0 10px 22px rgba(15,23,42,.22);
+    }
+
+    body.theme-dark .item.remote-new{
+      box-shadow:
+        0 0 0 1px rgba(56,189,248,.7),
+        0 0 22px rgba(56,189,248,.45),
+        0 10px 22px rgba(0,0,0,1);
+    }
+
     .check{
       width:32px;height:32px;border-radius:13px;
       border:2px solid #9ca3af;
@@ -641,6 +686,50 @@
       z-index:1;
     }
 
+    .item.dragging{
+      z-index:999;
+      box-shadow:
+        0 24px 44px rgba(15,23,42,.34),
+        0 0 0 1px rgba(56,189,248,.35);
+      cursor:grabbing;
+      opacity:.98;
+      transform:scale(1.01);
+    }
+
+    .drag-handle{
+      touch-action:none;
+      cursor:grab;
+      min-width:42px;
+      justify-content:center;
+      font-size:1rem;
+      line-height:1;
+      letter-spacing:.08em;
+      user-select:none;
+    }
+
+    .drag-handle:active{
+      cursor:grabbing;
+    }
+
+    .drag-placeholder{
+      min-height:64px;
+      border-radius:20px;
+      border:2px dashed rgba(56,189,248,.55);
+      background:rgba(191,219,254,.18);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
+    }
+
+    body.theme-dark .drag-placeholder{
+      background:rgba(30,41,59,.72);
+      border-color:rgba(125,211,252,.65);
+      box-shadow:inset 0 0 0 1px rgba(148,163,184,.18);
+    }
+
+    body.drag-active,
+    body.drag-active *{
+      user-select:none;
+    }
+
     .btn-mini.delete{
       border-color:#fda4af;
       background:radial-gradient(circle at 0 0,#fff1f2,#fecaca);
@@ -651,6 +740,18 @@
       background:radial-gradient(circle at 0 0,#450a0a,#7f1d1d);
       border-color:#fecaca;
       box-shadow:0 8px 18px rgba(127,29,29,1);
+    }
+
+    .time-pill.remote-pill{
+      background:rgba(56,189,248,.15);
+      border:1px solid rgba(56,189,248,.4);
+      color:#075985;
+    }
+
+    body.theme-dark .time-pill.remote-pill{
+      background:rgba(2,132,199,.22);
+      border-color:rgba(56,189,248,.55);
+      color:#bae6fd;
     }
 
     .empty-state{
@@ -1670,7 +1771,21 @@
         }
 
         if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+          if (!window.__nakupnyZoznamSwReloadHook) {
+            window.__nakupnyZoznamSwReloadHook = true;
+            navigator.serviceWorker.addEventListener("controllerchange", () => {
+              if (window.__nakupnyZoznamSwReloading) return;
+              window.__nakupnyZoznamSwReloading = true;
+              window.location.reload();
+            });
+          }
+
+          navigator.serviceWorker.register("./service-worker.js")
+            .then(registration => {
+              registration.update().catch(() => {});
+              setTimeout(() => registration.update().catch(() => {}), 3000);
+            })
+            .catch(console.error);
         }
 
         const syncButton = document.getElementById("btn-sync");
@@ -1707,9 +1822,15 @@
       const TOMBSTONE_TS = "1970-01-01T00:00:00.000Z";
       const AUTO_SYNC_DELAY_V2 = 700;
       const REMOTE_CACHE_TTL_MS = 10000;
+      const REMOTE_POLL_INTERVAL_MS = 15000;
       let lastRemoteSnapshotV2 = [];
       let lastRemoteFetchedAtV2 = 0;
       let pendingSyncAfterCurrentV2 = false;
+      let remotePollTimerV2 = null;
+      let remotePollInFlightV2 = false;
+      let remoteHighlightIdsV2 = new Set();
+      let remoteHighlightTimerV2 = null;
+      let dragStateV2 = null;
 
       function nowIso() {
         return new Date().toISOString();
@@ -1721,7 +1842,7 @@
         const merged = new Map();
         items
           .filter(item => item && typeof item.name === "string" && item.name.trim())
-          .forEach(item => {
+          .forEach((item, index) => {
             const normalized = {
               id: typeof item.id === "string" && item.id ? item.id : uid(),
               name: item.name.trim(),
@@ -1729,7 +1850,8 @@
               bought: Boolean(item.bought),
               boughtAt: item.boughtAt || null,
               updatedAt: item.updatedAt || item.boughtAt || TOMBSTONE_TS,
-              deleted: item.deleted === true
+              deleted: item.deleted === true,
+              order: Number.isFinite(Number(item.order)) ? Number(item.order) : index
             };
 
             const existing = merged.get(normalized.id);
@@ -1746,6 +1868,9 @@
           });
 
         return Array.from(merged.values()).sort((a, b) => {
+          if (a.order !== b.order) {
+            return a.order - b.order;
+          }
           const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
           const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
           return bTime - aTime;
@@ -1760,6 +1885,10 @@
         return normalizeItemsV2([...(remoteItems || []), ...(localItems || [])]);
       }
 
+      function visibleIdsV2(items) {
+        return new Set(normalizeItemsV2(items).filter(item => !item.deleted).map(item => item.id));
+      }
+
       function parseSyncItemsV2(data) {
         if (Array.isArray(data)) return normalizeItemsV2(data);
         if (data && Array.isArray(data.items)) return normalizeItemsV2(data.items);
@@ -1769,6 +1898,86 @@
       function persistStateV2() {
         state.items = normalizeItemsV2(state.items || []);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+      }
+
+      function setSyncStatusV2(mode, label) {
+        const pill = document.getElementById("sync-pill");
+        const text = document.getElementById("sync-status-text");
+        if (!pill || !text) return;
+        pill.classList.remove("loading", "synced", "saving", "error");
+        if (mode) {
+          pill.classList.add(mode);
+        }
+        text.textContent = label;
+      }
+
+      function markUnsavedChangesV2() {
+        setSyncStatusV2("saving", "Ukladam...");
+      }
+
+      function refreshRemoteHighlightsV2(ids) {
+        if (ids && ids.length) {
+          ids.forEach(id => remoteHighlightIdsV2.add(id));
+        }
+        if (remoteHighlightTimerV2) {
+          clearTimeout(remoteHighlightTimerV2);
+        }
+        remoteHighlightTimerV2 = setTimeout(() => {
+          remoteHighlightIdsV2.clear();
+          renderV2();
+        }, 12000);
+      }
+
+      function requestNotificationPermissionV2() {
+        if (!("Notification" in window)) return;
+        if (Notification.permission !== "default") return;
+        Notification.requestPermission().catch(() => {});
+      }
+
+      function enableNotificationPromptOnInteractionV2() {
+        const handler = () => requestNotificationPermissionV2();
+        document.addEventListener("click", handler, { once: true });
+        document.addEventListener("keydown", handler, { once: true });
+      }
+
+      function showRemoteAddNotificationV2(addedItems) {
+        if (!addedItems.length) return;
+
+        const label = addedItems.length === 1
+          ? "Pribudla polozka: " + addedItems[0].name
+          : "Pribudli " + addedItems.length + " nove polozky";
+
+        showToast(label, "\u{1F514}");
+
+        if (!("Notification" in window) || Notification.permission !== "granted") {
+          return;
+        }
+
+        try {
+          const body = addedItems.length === 1
+            ? addedItems[0].name
+            : addedItems.slice(0, 3).map(item => item.name).join(", ");
+          const notification = new Notification("Nakupny zoznam", { body });
+          setTimeout(() => notification.close(), 5000);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      function applyRemoteItemsV2(remoteItems, notifyAboutAdds) {
+        const localVisibleIds = visibleIdsV2(state.items || []);
+        const remoteVisibleItems = normalizeItemsV2(remoteItems).filter(item => !item.deleted);
+        const addedItems = notifyAboutAdds
+          ? remoteVisibleItems.filter(item => !localVisibleIds.has(item.id))
+          : [];
+
+        state.items = mergeItemsV2(state.items || [], remoteItems || []);
+        saveAndRenderV2();
+
+        if (notifyAboutAdds && addedItems.length) {
+          refreshRemoteHighlightsV2(addedItems.map(item => item.id));
+          showRemoteAddNotificationV2(addedItems);
+        }
       }
 
       function updateStatsV2() {
@@ -1787,6 +1996,9 @@
         const cont = document.getElementById("list-scroll");
         const empty = document.getElementById("empty-state");
         const visibleItems = visibleItemsV2();
+        if (dragStateV2) {
+          cancelActiveDragV2(false);
+        }
         cont.innerHTML = "";
 
         if (!visibleItems.length) {
@@ -1814,7 +2026,9 @@
 
       function renderItemV2(it) {
         const card = document.createElement("div");
-        card.className = "item" + (it.bought ? " bought" : "");
+        card.className = "item" + (it.bought ? " bought" : "") + (remoteHighlightIdsV2.has(it.id) ? " remote-new" : "");
+        card.dataset.id = it.id;
+        card.dataset.bought = it.bought ? "true" : "false";
 
         const check = document.createElement("div");
         check.className = "check";
@@ -1836,6 +2050,12 @@
 
         const meta = document.createElement("div");
         meta.className = "item-meta-row";
+        if (remoteHighlightIdsV2.has(it.id)) {
+          const remote = document.createElement("div");
+          remote.className = "time-pill remote-pill";
+          remote.textContent = "Z ineho zariadenia";
+          meta.appendChild(remote);
+        }
         if (it.bought && it.boughtAt) {
           const t = document.createElement("div");
           t.className = "time-pill";
@@ -1848,6 +2068,15 @@
 
         const actions = document.createElement("div");
         actions.className = "item-actions";
+        const dragHandle = document.createElement("button");
+        dragHandle.className = "btn-mini drag-handle";
+        dragHandle.innerHTML = "<span>\u2630</span>";
+        dragHandle.title = "Presunut";
+        dragHandle.type = "button";
+        dragHandle.setAttribute("aria-label", "Presunut polozku");
+        dragHandle.addEventListener("pointerdown", event => startDragV2(event, it.id));
+        actions.appendChild(dragHandle);
+
         const del = document.createElement("button");
         del.className = "btn-mini delete";
         del.innerHTML = "<span>\u{1F5D1}\uFE0F</span>";
@@ -1868,6 +2097,225 @@
         renderV2();
       }
 
+      function bucketItemsSelectorV2(bought) {
+        return `#list-scroll .item[data-bought="${bought}"][data-id]`;
+      }
+
+      function getBucketCardsV2(bought, excludeId) {
+        return Array.from(document.querySelectorAll(bucketItemsSelectorV2(bought)))
+          .filter(card => !excludeId || card.dataset.id !== excludeId);
+      }
+
+      function updateDragVisualPositionV2(clientY) {
+        if (!dragStateV2) return;
+        const nextTop = clientY - dragStateV2.pointerOffsetY;
+        dragStateV2.card.style.top = `${nextTop}px`;
+      }
+
+      function maybeAutoScrollWhileDraggingV2(clientY) {
+        if (!dragStateV2 || !dragStateV2.list) return;
+        const rect = dragStateV2.list.getBoundingClientRect();
+        const edge = Math.min(84, rect.height * 0.22);
+        const maxStep = 22;
+
+        if (clientY < rect.top + edge) {
+          const ratio = Math.max(0, (edge - (clientY - rect.top)) / edge);
+          dragStateV2.list.scrollTop -= Math.ceil(maxStep * ratio);
+          return;
+        }
+
+        if (clientY > rect.bottom - edge) {
+          const ratio = Math.max(0, (clientY - (rect.bottom - edge)) / edge);
+          dragStateV2.list.scrollTop += Math.ceil(maxStep * ratio);
+        }
+      }
+
+      function movePlaceholderV2(clientY) {
+        if (!dragStateV2 || !dragStateV2.placeholder) return;
+
+        const siblings = getBucketCardsV2(dragStateV2.bought, dragStateV2.id);
+        if (!siblings.length) return;
+
+        const beforeElement = siblings.find(element => {
+          const rect = element.getBoundingClientRect();
+          return clientY < rect.top + rect.height / 2;
+        });
+
+        if (beforeElement) {
+          beforeElement.parentNode.insertBefore(dragStateV2.placeholder, beforeElement);
+          return;
+        }
+
+        const lastSibling = siblings[siblings.length - 1];
+        lastSibling.parentNode.insertBefore(dragStateV2.placeholder, lastSibling.nextSibling);
+      }
+
+      function cancelActiveDragV2(commitOrder) {
+        if (!dragStateV2) return;
+
+        const { card, handle, placeholder, pointerId } = dragStateV2;
+        window.removeEventListener("pointermove", moveDragV2);
+        window.removeEventListener("pointerup", endDragV2);
+        window.removeEventListener("pointercancel", endDragV2);
+        document.body.classList.remove("drag-active");
+
+        try {
+          handle.releasePointerCapture?.(pointerId);
+        } catch (error) {}
+
+        if (placeholder && placeholder.parentNode && card) {
+          placeholder.parentNode.insertBefore(card, placeholder);
+          placeholder.remove();
+        }
+
+        if (card) {
+          card.classList.remove("dragging");
+          card.style.position = "";
+          card.style.top = "";
+          card.style.left = "";
+          card.style.width = "";
+          card.style.height = "";
+          card.style.pointerEvents = "";
+          card.style.margin = "";
+          card.style.zIndex = "";
+        }
+
+        dragStateV2 = null;
+
+        if (commitOrder) {
+          syncOrderFromDomV2();
+        }
+      }
+
+      function syncOrderFromDomV2() {
+        const visibleCards = Array.from(document.querySelectorAll("#list-scroll .item[data-id]"));
+        if (!visibleCards.length) return;
+
+        let changed = false;
+        const timestamp = nowIso();
+
+        visibleCards.forEach((card, index) => {
+          const item = state.items.find(entry => entry.id === card.dataset.id);
+          if (!item || item.deleted) return;
+          if (item.order !== index) {
+            item.order = index;
+            item.updatedAt = timestamp;
+            changed = true;
+          }
+        });
+
+        if (!changed) return;
+        saveAndRenderV2();
+        markUnsavedChangesV2();
+        scheduleAutoSync();
+      }
+
+      function startDragV2(event, id) {
+        if (event.button !== undefined && event.button !== 0) return;
+        if (dragStateV2) {
+          cancelActiveDragV2(false);
+        }
+
+        const handle = event.currentTarget;
+        const card = handle.closest(".item");
+        const list = document.getElementById("list-scroll");
+        if (!card || !list) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const rect = card.getBoundingClientRect();
+        const placeholder = document.createElement("div");
+        placeholder.className = "drag-placeholder";
+        placeholder.style.height = `${rect.height}px`;
+
+        card.parentNode.insertBefore(placeholder, card);
+        document.body.appendChild(card);
+
+        dragStateV2 = {
+          id,
+          handle,
+          card,
+          list,
+          placeholder,
+          pointerId: event.pointerId,
+          bought: card.dataset.bought,
+          pointerOffsetY: event.clientY - rect.top
+        };
+
+        document.body.classList.add("drag-active");
+        card.classList.add("dragging");
+        card.style.position = "fixed";
+        card.style.top = `${rect.top}px`;
+        card.style.left = `${rect.left}px`;
+        card.style.width = `${rect.width}px`;
+        card.style.height = `${rect.height}px`;
+        card.style.pointerEvents = "none";
+        card.style.margin = "0";
+        card.style.zIndex = "999";
+
+        handle.setPointerCapture?.(event.pointerId);
+        window.addEventListener("pointermove", moveDragV2, { passive: false });
+        window.addEventListener("pointerup", endDragV2, { passive: false });
+        window.addEventListener("pointercancel", endDragV2, { passive: false });
+      }
+
+      function moveDragV2(event) {
+        if (!dragStateV2 || event.pointerId !== dragStateV2.pointerId) return;
+        event.preventDefault();
+        maybeAutoScrollWhileDraggingV2(event.clientY);
+        updateDragVisualPositionV2(event.clientY);
+        movePlaceholderV2(event.clientY);
+      }
+
+      function endDragV2(event) {
+        if (!dragStateV2 || event.pointerId !== dragStateV2.pointerId) return;
+        event.preventDefault();
+        cancelActiveDragV2(true);
+      }
+
+      function currentBucketIdsV2(boughtState) {
+        return visibleItemsV2()
+          .filter(item => item.bought === boughtState)
+          .map(item => item.id);
+      }
+
+      function canMoveItemV2(id, delta) {
+        const current = state.items.find(item => item.id === id);
+        if (!current || current.deleted) return false;
+        const bucketIds = currentBucketIdsV2(Boolean(current.bought));
+        const index = bucketIds.indexOf(id);
+        if (index === -1) return false;
+        const targetIndex = index + delta;
+        return targetIndex >= 0 && targetIndex < bucketIds.length;
+      }
+
+      function moveItemV2(id, delta) {
+        const current = state.items.find(item => item.id === id);
+        if (!current || current.deleted) return;
+        const bucketIds = currentBucketIdsV2(Boolean(current.bought));
+        const index = bucketIds.indexOf(id);
+        const targetIndex = index + delta;
+        if (index === -1 || targetIndex < 0 || targetIndex >= bucketIds.length) return;
+
+        const swapId = bucketIds[targetIndex];
+        const swapItem = state.items.find(item => item.id === swapId);
+        if (!swapItem) return;
+
+        const currentOrder = Number.isFinite(Number(current.order)) ? Number(current.order) : index;
+        const swapOrder = Number.isFinite(Number(swapItem.order)) ? Number(swapItem.order) : targetIndex;
+        const timestamp = nowIso();
+
+        current.order = swapOrder;
+        swapItem.order = currentOrder;
+        current.updatedAt = timestamp;
+        swapItem.updatedAt = timestamp;
+
+        saveAndRenderV2();
+        markUnsavedChangesV2();
+        scheduleAutoSync();
+      }
+
       function addItemV2(name) {
         const n = (name || "").trim();
         if (!n) {
@@ -1882,9 +2330,11 @@
           bought: false,
           boughtAt: null,
           updatedAt: nowIso(),
-          deleted: false
+          deleted: false,
+          order: Math.min(0, ...visibleItemsV2().map(item => item.order)) - 1
         });
         saveAndRenderV2();
+        markUnsavedChangesV2();
         scheduleAutoSync();
         showToast("Pridane do zoznamu.", "\u{1F6D2}");
       }
@@ -1896,6 +2346,7 @@
         it.boughtAt = it.bought ? nowIso() : null;
         it.updatedAt = nowIso();
         saveAndRenderV2();
+        markUnsavedChangesV2();
         scheduleAutoSync();
         showToast(it.bought ? "Oznacene ako kupene." : "Vratene medzi polozky na kupu.", it.bought ? "\u2705" : "\u21A9\uFE0F");
       }
@@ -1907,6 +2358,7 @@
         it.deleted = true;
         it.updatedAt = nowIso();
         saveAndRenderV2();
+        markUnsavedChangesV2();
         scheduleAutoSync();
         showToast("Vymazane: " + name, "\u{1F5D1}\uFE0F");
       }
@@ -1925,6 +2377,7 @@
           item.updatedAt = deletedAt;
         });
         saveAndRenderV2();
+        markUnsavedChangesV2();
         scheduleAutoSync();
         showToast("Kupene polozky vymazane.", "\u{1F5D1}\uFE0F");
       }
@@ -1942,6 +2395,7 @@
           item.updatedAt = timestamp;
         });
         saveAndRenderV2();
+        markUnsavedChangesV2();
         scheduleAutoSync();
         showToast("Vsetko oznacene ako kupene.", "\u2705");
       }
@@ -1981,6 +2435,22 @@
         return next();
       }
 
+      function pollRemoteChangesV2(forceRefresh) {
+        if (remotePollInFlightV2 || isSyncInProgress || dragStateV2) return Promise.resolve();
+        remotePollInFlightV2 = true;
+
+        return fetchSheetsSnapshotV2(Boolean(forceRefresh))
+          .then(remoteItems => {
+            applyRemoteItemsV2(remoteItems || [], true);
+          })
+          .catch(error => {
+            console.error(error);
+          })
+          .finally(() => {
+            remotePollInFlightV2 = false;
+          });
+      }
+
       function syncToSheetsV2(showFeedback) {
         if (isSyncInProgress) {
           pendingSyncAfterCurrentV2 = true;
@@ -1991,12 +2461,11 @@
         clearTimeout(autoSyncTimer);
 
         const pill = document.getElementById("sync-pill");
-        const text = document.getElementById("sync-status-text");
         if (pill) {
           pill.classList.add("loading");
           pill.classList.remove("synced");
         }
-        if (text) text.textContent = "Sync: prebieha...";
+        setSyncStatusV2("loading", "Synchronizujem...");
 
         fetchSheetsSnapshotV2(Boolean(showFeedback))
           .then(remoteItems => {
@@ -2016,14 +2485,9 @@
               });
           })
           .then(items => {
-            state.items = mergeItemsV2(state.items || [], items || []);
-            saveAndRenderV2();
+            applyRemoteItemsV2(items || [], false);
             exportSyncTimestampSuccess(Boolean(showFeedback));
-            if (pill) {
-              pill.classList.remove("loading");
-              pill.classList.add("synced");
-            }
-            if (text) text.textContent = "Sync: hotovo";
+            setSyncStatusV2("synced", "Ulozene");
             if (showFeedback) showToast("Sync so Sheets hotovy.", "\u2705");
           })
           .catch(error => {
@@ -2031,23 +2495,15 @@
             const hasVisibleItems = visibleItemsV2().length > 0;
             if (!hasVisibleItems) {
               exportSyncTimestampSuccess(false);
-              if (pill) {
-                pill.classList.remove("loading");
-                pill.classList.add("synced");
-              }
-              if (text) text.textContent = "Sync: hotovo";
+              setSyncStatusV2("synced", "Ulozene");
               if (showFeedback) showToast("Zoznam je vymazany a ulozeny.", "\u2705");
               return;
             }
-            if (pill) pill.classList.remove("loading");
             if (showFeedback) {
-              if (pill) pill.classList.remove("synced");
-              if (text) text.textContent = "Sync: chyba";
+              setSyncStatusV2("error", "Sync chyba");
               showToast("Sync zlyhal. Skus neskor.", "\u26A0\uFE0F");
             } else {
-              if (text && localStorage.getItem(SYNC_KEY)) {
-                text.textContent = "Sync: pred chvilou";
-              }
+              setSyncStatusV2("saving", "Caka na siet");
             }
           })
           .finally(() => {
@@ -2096,6 +2552,8 @@
         updateStatsV2 = function () { return; };
 
         renderV2();
+        enableNotificationPromptOnInteractionV2();
+        setSyncStatusV2("loading", "Nacitavam...");
 
         const qtyInput = document.getElementById("input-qty");
         if (qtyInput) {
@@ -2133,10 +2591,29 @@
 
         fetchSheetsSnapshotV2(true)
           .then(remoteItems => {
-            state.items = mergeItemsV2(state.items || [], remoteItems || []);
-            saveAndRenderV2();
+            applyRemoteItemsV2(remoteItems || [], false);
+            exportSyncTimestampSuccess(false);
+            setSyncStatusV2("synced", "Ulozene");
           })
-          .catch(() => {});
+          .catch(() => {
+            setSyncStatusV2(localStorage.getItem(SYNC_KEY) ? "synced" : "saving", localStorage.getItem(SYNC_KEY) ? "Ulozene" : "Pripravene");
+          });
+
+        if (remotePollTimerV2) {
+          clearInterval(remotePollTimerV2);
+        }
+        remotePollTimerV2 = setInterval(() => {
+          pollRemoteChangesV2(true);
+        }, REMOTE_POLL_INTERVAL_MS);
+
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) {
+            setSyncStatusV2("loading", "Nacitavam...");
+            pollRemoteChangesV2(true).finally(() => {
+              setSyncStatusV2("synced", "Ulozene");
+            });
+          }
+        });
 
         replaceNodeWithHandler("btn-sync", () => syncToSheetsV2(true));
         replaceNodeWithHandler("btn-mark-all-bottom", markAllBoughtV2);
