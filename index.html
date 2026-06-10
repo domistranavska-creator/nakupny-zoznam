@@ -634,6 +634,7 @@
       items: [],
       syncInProgress: false,
       unsaved: localStorage.getItem(UNSAVED_KEY) === "1",
+      localRevision: 0,
       toastTimer: null,
       syncTimer: null,
       syncQueued: false,
@@ -755,6 +756,23 @@
     function persistItems() {
       state.items = normalizeItems(state.items);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    }
+
+    function touchLocalRevision() {
+      state.localRevision += 1;
+      return state.localRevision;
+    }
+
+    function applyServerItems(serverItems, requestRevision) {
+      const changedDuringRequest = state.localRevision !== requestRevision;
+      const normalizedServerItems = normalizeItems(serverItems);
+
+      state.items = changedDuringRequest
+        ? normalizeItems([...(normalizedServerItems || []), ...(state.items || [])])
+        : normalizedServerItems;
+
+      persistItems();
+      return changedDuringRequest;
     }
 
     function stampItem(item, timestamp) {
@@ -1053,6 +1071,7 @@
         order: nextTopOrder()
       }));
 
+      touchLocalRevision();
       persistItems();
       render();
       scheduleAutoSave();
@@ -1066,6 +1085,7 @@
       item.bought = !item.bought;
       item.boughtAt = item.bought ? timestamp : null;
       stampItem(item, timestamp);
+      touchLocalRevision();
       persistItems();
       render();
       scheduleAutoSave(500);
@@ -1077,6 +1097,7 @@
 
       item.deleted = true;
       stampItem(item);
+      touchLocalRevision();
       persistItems();
       render();
       scheduleAutoSave(500);
@@ -1097,6 +1118,7 @@
         stampItem(item, timestamp);
       });
 
+      touchLocalRevision();
       persistItems();
       render();
       scheduleAutoSave(400);
@@ -1117,6 +1139,7 @@
         stampItem(item, timestamp);
       });
 
+      touchLocalRevision();
       persistItems();
       render();
       scheduleAutoSave(400);
@@ -1185,16 +1208,26 @@
         return flushAutoSave(showFeedback);
       }
 
+      const requestRevision = state.localRevision;
       state.syncInProgress = true;
       setStatus("loading", "Nacitavam...");
 
       return fetchRemoteItems()
         .then(remoteItems => {
-          state.items = normalizeItems(remoteItems);
-          persistItems();
+          const changedDuringRequest = applyServerItems(remoteItems, requestRevision);
           touchSyncSuccess();
-          setUnsaved(false);
           render();
+
+          if (changedDuringRequest) {
+            setUnsaved(true);
+            scheduleAutoSave(250);
+            if (showFeedback) {
+              showToast("Nacitane, tvoje zmeny sa este ukladaju.");
+            }
+            return true;
+          }
+
+          setUnsaved(false);
           setStatus("synced", "Aktualne");
           if (showFeedback) {
             showToast("Nacitane zo Sheets.");
@@ -1219,12 +1252,14 @@
     function saveToSheets(showFeedback) {
       if (state.syncInProgress) return Promise.resolve(false);
 
+      const requestRevision = state.localRevision;
+      const localSnapshot = normalizeItems(state.items);
       state.syncInProgress = true;
       setStatus("loading", "Ukladam...");
 
       return fetchRemoteItems()
         .then(remoteItems => {
-          const merged = normalizeItems([...(remoteItems || []), ...(state.items || [])]);
+          const merged = normalizeItems([...(remoteItems || []), ...(localSnapshot || [])]);
 
           return fetch(SHEETS_SYNC_URL, {
             method: "POST",
@@ -1251,11 +1286,20 @@
             });
         })
         .then(finalItems => {
-          state.items = normalizeItems(finalItems);
-          persistItems();
+          const changedDuringRequest = applyServerItems(finalItems, requestRevision);
           touchSyncSuccess();
-          setUnsaved(false);
           render();
+
+          if (changedDuringRequest) {
+            setUnsaved(true);
+            scheduleAutoSave(250);
+            if (showFeedback) {
+              showToast("Ulozene, dalsie zmeny sa este ukladaju.");
+            }
+            return true;
+          }
+
+          setUnsaved(false);
           setStatus("synced", "Aktualne");
           if (showFeedback) {
             showToast("Ulozene.");
