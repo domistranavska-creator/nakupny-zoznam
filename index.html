@@ -3043,14 +3043,14 @@
 
       if (drag.card) {
         drag.card.classList.remove("drag-origin");
-        drag.card.style.touchAction = "";
 
         try {
           if (
+            drag.inputKind === "pointer" &&
             typeof drag.card.hasPointerCapture === "function" &&
-            drag.card.hasPointerCapture(drag.pointerId)
+            drag.card.hasPointerCapture(drag.contactId)
           ) {
-            drag.card.releasePointerCapture(drag.pointerId);
+            drag.card.releasePointerCapture(drag.contactId);
           }
         } catch (error) {
           // The browser may release pointer capture before pointerup.
@@ -3094,14 +3094,15 @@
       drag.offsetY = drag.startY - rect.top;
       drag.ghost = ghost;
       drag.card.classList.add("drag-origin");
-      drag.card.style.touchAction = "none";
       document.body.classList.add("item-reordering");
       document.body.appendChild(ghost);
 
-      try {
-        drag.card.setPointerCapture(drag.pointerId);
-      } catch (error) {
-        // Pointer capture is optional; document listeners remain active.
+      if (drag.inputKind === "pointer") {
+        try {
+          drag.card.setPointerCapture(drag.contactId);
+        } catch (error) {
+          // Pointer capture is optional; document listeners remain active.
+        }
       }
 
       markTyping();
@@ -3109,17 +3110,7 @@
       showToast("Potiahni položku hore alebo dole.");
     }
 
-    function beginItemLongPress(event, item, card) {
-      if (
-        !event ||
-        !item ||
-        !card ||
-        event.target.closest("button") ||
-        (event.pointerType === "mouse" && event.button !== 0)
-      ) {
-        return;
-      }
-
+    function createItemLongPress(item, card, inputKind, contactId, clientX, clientY) {
       cancelItemLongPress();
       markTyping();
 
@@ -3127,9 +3118,10 @@
         id: item.id,
         bought: item.bought === true,
         card: card,
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
+        inputKind: inputKind,
+        contactId: contactId,
+        startX: clientX,
+        startY: clientY,
         activated: false,
         moved: false,
         ghost: null,
@@ -3138,25 +3130,113 @@
 
       drag.timer = setTimeout(() => {
         activateItemDrag(drag);
-      }, 430);
+      }, 460);
 
       state.itemDrag = drag;
     }
 
-    function autoScrollForItemDrag(clientY) {
-      const edge = 82;
-      const speed = 13;
-
-      if (clientY < edge) {
-        window.scrollBy(0, -speed);
-      } else if (clientY > window.innerHeight - edge) {
-        window.scrollBy(0, speed);
+    function beginItemPointerLongPress(event, item, card) {
+      if (
+        !event ||
+        !item ||
+        !card ||
+        event.pointerType === "touch" ||
+        event.target.closest("button") ||
+        (event.pointerType === "mouse" && event.button !== 0)
+      ) {
+        return;
       }
+
+      createItemLongPress(
+        item,
+        card,
+        "pointer",
+        event.pointerId,
+        event.clientX,
+        event.clientY
+      );
     }
 
-    function handleItemDragMove(event) {
+    function beginItemTouchLongPress(event, item, card) {
+      if (
+        !event ||
+        !item ||
+        !card ||
+        event.touches.length !== 1 ||
+        event.target.closest("button")
+      ) {
+        return;
+      }
+
+      const touch = event.touches[0];
+      createItemLongPress(
+        item,
+        card,
+        "touch",
+        touch.identifier,
+        touch.clientX,
+        touch.clientY
+      );
+    }
+
+    function findTouchById(touchList, identifier) {
+      if (!touchList) return null;
+
+      for (let index = 0; index < touchList.length; index += 1) {
+        if (touchList[index].identifier === identifier) {
+          return touchList[index];
+        }
+      }
+
+      return null;
+    }
+
+    function moveActivatedItemDrag(drag, clientX, clientY) {
+      markTyping();
+
+      if (drag.ghost) {
+        drag.ghost.style.top =
+          Math.round(clientY - drag.offsetY) + "px";
+      }
+
+      const pointed = document.elementFromPoint(
+        clientX,
+        clientY
+      );
+      const target = pointed ? pointed.closest(".item") : null;
+
+      if (
+        !target ||
+        target === drag.card ||
+        target.classList.contains("item-drag-ghost") ||
+        target.dataset.bought !== (drag.bought ? "1" : "0")
+      ) {
+        return;
+      }
+
+      const rect = target.getBoundingClientRect();
+      const placeBefore = clientY < rect.top + rect.height / 2;
+
+      if (placeBefore) {
+        if (drag.card.nextSibling === target) return;
+        target.parentNode.insertBefore(drag.card, target);
+      } else {
+        if (target.nextSibling === drag.card) return;
+        target.parentNode.insertBefore(drag.card, target.nextSibling);
+      }
+
+      drag.moved = true;
+    }
+
+    function handleItemPointerMove(event) {
       const drag = state.itemDrag;
-      if (!drag || event.pointerId !== drag.pointerId) return;
+      if (
+        !drag ||
+        drag.inputKind !== "pointer" ||
+        event.pointerId !== drag.contactId
+      ) {
+        return;
+      }
 
       if (!drag.activated) {
         const distance = Math.hypot(
@@ -3171,41 +3251,41 @@
       }
 
       event.preventDefault();
-      markTyping();
-      autoScrollForItemDrag(event.clientY);
-
-      if (drag.ghost) {
-        drag.ghost.style.top =
-          Math.round(event.clientY - drag.offsetY) + "px";
-      }
-
-      const pointed = document.elementFromPoint(
+      moveActivatedItemDrag(
+        drag,
         event.clientX,
         event.clientY
       );
-      const target = pointed ? pointed.closest(".item") : null;
+    }
 
-      if (
-        !target ||
-        target === drag.card ||
-        target.classList.contains("item-drag-ghost") ||
-        target.dataset.bought !== (drag.bought ? "1" : "0")
-      ) {
+    function handleItemTouchMove(event) {
+      const drag = state.itemDrag;
+      if (!drag || drag.inputKind !== "touch") return;
+
+      const touch = findTouchById(
+        event.touches,
+        drag.contactId
+      );
+      if (!touch) return;
+
+      if (!drag.activated) {
+        const distance = Math.hypot(
+          touch.clientX - drag.startX,
+          touch.clientY - drag.startY
+        );
+
+        if (distance > 10) {
+          cancelItemLongPress();
+        }
         return;
       }
 
-      const rect = target.getBoundingClientRect();
-      const placeBefore = event.clientY < rect.top + rect.height / 2;
-
-      if (placeBefore) {
-        if (drag.card.nextSibling === target) return;
-        target.parentNode.insertBefore(drag.card, target);
-      } else {
-        if (target.nextSibling === drag.card) return;
-        target.parentNode.insertBefore(drag.card, target.nextSibling);
-      }
-
-      drag.moved = true;
+      event.preventDefault();
+      moveActivatedItemDrag(
+        drag,
+        touch.clientX,
+        touch.clientY
+      );
     }
 
     function saveShoppingItemOrder(orderedIds) {
@@ -3238,16 +3318,14 @@
       showToast("Poradie uložené.");
     }
 
-    function finishItemDrag(event) {
+    function completeItemDrag() {
       const drag = state.itemDrag;
-      if (!drag || event.pointerId !== drag.pointerId) return;
+      if (!drag) return;
 
       if (!drag.activated) {
         cancelItemLongPress();
         return;
       }
-
-      event.preventDefault();
 
       const list = document.getElementById("list");
       const orderedIds = list
@@ -3268,6 +3346,38 @@
       if (moved && orderedIds.length) {
         saveShoppingItemOrder(orderedIds);
       }
+    }
+
+    function finishItemPointerDrag(event) {
+      const drag = state.itemDrag;
+      if (
+        !drag ||
+        drag.inputKind !== "pointer" ||
+        event.pointerId !== drag.contactId
+      ) {
+        return;
+      }
+
+      if (drag.activated) {
+        event.preventDefault();
+      }
+      completeItemDrag();
+    }
+
+    function finishItemTouchDrag(event) {
+      const drag = state.itemDrag;
+      if (!drag || drag.inputKind !== "touch") return;
+
+      const touch = findTouchById(
+        event.changedTouches,
+        drag.contactId
+      );
+      if (!touch) return;
+
+      if (drag.activated) {
+        event.preventDefault();
+      }
+      completeItemDrag();
     }
 
     function renderGroup(container, title, className, items) {
@@ -3295,7 +3405,12 @@
         toggleBought(item.id);
       });
       card.addEventListener("pointerdown", event => {
-        beginItemLongPress(event, item, card);
+        beginItemPointerLongPress(event, item, card);
+      });
+      card.addEventListener("touchstart", event => {
+        beginItemTouchLongPress(event, item, card);
+      }, {
+        passive: true
       });
       card.addEventListener("contextmenu", event => {
         event.preventDefault();
@@ -3989,13 +4104,22 @@
         });
       }
 
-      document.addEventListener("pointermove", handleItemDragMove, {
+      document.addEventListener("pointermove", handleItemPointerMove, {
         passive: false
       });
-      document.addEventListener("pointerup", finishItemDrag, {
+      document.addEventListener("pointerup", finishItemPointerDrag, {
         passive: false
       });
-      document.addEventListener("pointercancel", finishItemDrag, {
+      document.addEventListener("pointercancel", finishItemPointerDrag, {
+        passive: false
+      });
+      document.addEventListener("touchmove", handleItemTouchMove, {
+        passive: false
+      });
+      document.addEventListener("touchend", finishItemTouchDrag, {
+        passive: false
+      });
+      document.addEventListener("touchcancel", finishItemTouchDrag, {
         passive: false
       });
 

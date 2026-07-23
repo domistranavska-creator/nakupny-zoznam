@@ -1,4 +1,4 @@
-const CACHE_NAME = "nakupny-zoznam-runtime-v2026-07-23-reorder";
+const CACHE_NAME = "nakupny-zoznam-runtime-v2026-07-23-touch-reorder";
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",
