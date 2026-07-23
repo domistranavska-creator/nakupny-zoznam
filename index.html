@@ -1900,6 +1900,21 @@
       return normalizeNotes([...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])]);
     }
 
+    function creationMetadata(left, right) {
+      const leftTime = timeMs(left && left.createdAt);
+      const rightTime = timeMs(right && right.createdAt);
+
+      if (leftTime && rightTime) {
+        return leftTime <= rightTime ? left : right;
+      }
+
+      if (leftTime) return left;
+      if (rightTime) return right;
+
+      const leftHasAuthor = Boolean(left && (left.createdByLabel || left.createdById || left.createdByType));
+      return leftHasAuthor ? left : right;
+    }
+
     function normalizeItems(items) {
       if (!Array.isArray(items)) return [];
 
@@ -1919,6 +1934,16 @@
             updatedById: item.updatedById ? String(item.updatedById) : "",
             updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
             updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : "",
+            createdAt: item.createdAt
+              ? String(item.createdAt)
+              : (item.updatedAt ? String(item.updatedAt) : (item.boughtAt ? String(item.boughtAt) : "")),
+            createdById: item.createdById ? String(item.createdById) : (item.updatedById ? String(item.updatedById) : ""),
+            createdByType: item.createdByType === "mobile"
+              ? "mobile"
+              : (item.createdByType === "desktop"
+                ? "desktop"
+                : (item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""))),
+            createdByLabel: item.createdByLabel ? String(item.createdByLabel) : (item.updatedByLabel ? String(item.updatedByLabel) : ""),
             notes: normalizeNotes(item.notes)
           };
 
@@ -1931,7 +1956,12 @@
           const currentTime = timeMs(current.updatedAt);
           const nextTime = timeMs(normalized.updatedAt);
           const preferred = nextTime >= currentTime ? normalized : current;
+          const created = creationMetadata(current, normalized) || preferred;
           merged.set(normalized.id, Object.assign({}, preferred, {
+            createdAt: created.createdAt || preferred.createdAt || "",
+            createdById: created.createdById || preferred.createdById || "",
+            createdByType: created.createdByType || preferred.createdByType || "",
+            createdByLabel: created.createdByLabel || preferred.createdByLabel || "",
             notes: mergeNotes(current.notes, normalized.notes)
           }));
         });
@@ -2005,6 +2035,16 @@
             updatedById: item.updatedById ? String(item.updatedById) : "",
             updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
             updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : "",
+            createdAt: item.createdAt
+              ? String(item.createdAt)
+              : (item.updatedAt ? String(item.updatedAt) : (item.packedAt ? String(item.packedAt) : "")),
+            createdById: item.createdById ? String(item.createdById) : (item.updatedById ? String(item.updatedById) : ""),
+            createdByType: item.createdByType === "mobile"
+              ? "mobile"
+              : (item.createdByType === "desktop"
+                ? "desktop"
+                : (item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""))),
+            createdByLabel: item.createdByLabel ? String(item.createdByLabel) : (item.updatedByLabel ? String(item.updatedByLabel) : ""),
             notes: normalizeNotes(item.notes)
           };
 
@@ -2021,7 +2061,12 @@
           const currentTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
           const nextTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
           const preferred = nextTime >= currentTime ? normalized : current;
+          const created = creationMetadata(current, normalized) || preferred;
           mergedItems.set(normalized.id, Object.assign({}, preferred, {
+            createdAt: created.createdAt || preferred.createdAt || "",
+            createdById: created.createdById || preferred.createdById || "",
+            createdByType: created.createdByType || preferred.createdByType || "",
+            createdByLabel: created.createdByLabel || preferred.createdByLabel || "",
             notes: mergeNotes(current.notes, normalized.notes)
           }));
         });
@@ -2271,15 +2316,14 @@
     }
 
     function sourceText(item) {
-      if (!item || !item.updatedById || item.updatedById === device.id) {
-        return "";
-      }
+      if (!item) return "";
 
-      if (item.updatedByLabel) {
-        return "Od " + item.updatedByLabel;
-      }
-
-      return item.updatedByType === "mobile" ? "Z mobilu" : "Z PC";
+      const authorType = item.createdByType || item.updatedByType;
+      const typeLabel = authorType === "mobile" ? "Mobil" : (authorType === "desktop" ? "PC" : "");
+      const label = item.createdByLabel || item.updatedByLabel;
+      const author = label ? "Od " + label : (typeLabel ? "Z " + typeLabel : "");
+      const addedAt = formatDate(item.createdAt || item.updatedAt);
+      return [author, label ? typeLabel : "", addedAt].filter(Boolean).join(" · ");
     }
 
     function findNoteItemById(id, kind) {
@@ -2588,6 +2632,7 @@
         return false;
       }
 
+      const timestamp = nowIso();
       state.packing.items.push(stampItem({
         id: uid(),
         sectionId: sectionId,
@@ -2596,8 +2641,12 @@
         packedAt: null,
         order: nextPackingItemOrder(sectionId),
         deleted: false,
+        createdAt: timestamp,
+        createdById: device.id,
+        createdByType: device.type,
+        createdByLabel: device.label,
         notes: []
-      }));
+      }, timestamp));
 
       touchLocalRevision();
       persistPacking();
@@ -2879,13 +2928,6 @@
               sourceChip.className = "chip source";
               sourceChip.textContent = source;
               sub.appendChild(sourceChip);
-            }
-
-            if (item.packed && item.packedAt) {
-              const packedChip = document.createElement("div");
-              packedChip.className = "chip";
-              packedChip.textContent = formatDate(item.packedAt);
-              sub.appendChild(packedChip);
             }
 
             if (sub.children.length) {
@@ -3439,13 +3481,6 @@
         meta.appendChild(sourceChip);
       }
 
-      if (item.bought && item.boughtAt) {
-        const boughtChip = document.createElement("div");
-        boughtChip.className = "chip";
-        boughtChip.textContent = formatDate(item.boughtAt);
-        meta.appendChild(boughtChip);
-      }
-
       if (meta.children.length) {
         main.appendChild(meta);
       }
@@ -3568,6 +3603,7 @@
         return false;
       }
 
+      const timestamp = nowIso();
       state.items.unshift(stampItem({
         id: uid(),
         name: clean,
@@ -3575,8 +3611,12 @@
         boughtAt: null,
         deleted: false,
         order: nextTopOrder(),
+        createdAt: timestamp,
+        createdById: device.id,
+        createdByType: device.type,
+        createdByLabel: device.label,
         notes: []
-      }));
+      }, timestamp));
 
       rememberItemName(clean);
       touchLocalRevision();
