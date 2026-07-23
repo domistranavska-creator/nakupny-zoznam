@@ -78,6 +78,13 @@
       padding: 18px 18px 8px;
     }
 
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
     .title-wrap {
       min-width: 0;
     }
@@ -159,6 +166,13 @@
       color: var(--text);
       font-weight: 800;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .icon-btn.primary {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(2, 132, 199, 0.24));
+      color: #075985;
+      border: 1px solid rgba(14, 165, 233, 0.18);
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.12);
     }
 
     .icon-btn:active,
@@ -446,6 +460,230 @@
       transform: translateY(0);
     }
 
+    .vacation-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.46);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 55;
+    }
+
+    .vacation-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .vacation-modal {
+      position: fixed;
+      inset: 12px;
+      width: min(680px, calc(100vw - 24px));
+      max-height: calc(100dvh - 24px);
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 28px 64px rgba(15, 23, 42, 0.28);
+      transform: translateY(24px) scale(0.98);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.24s ease, opacity 0.24s ease;
+      z-index: 60;
+      overflow: hidden;
+    }
+
+    .vacation-modal.open {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .vacation-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .vacation-title {
+      margin: 0;
+      font-family: "Baloo 2", system-ui, sans-serif;
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .vacation-subtitle {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .vacation-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px 18px;
+      scrollbar-width: none;
+    }
+
+    .vacation-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    .vacation-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .vacation-board {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .vacation-empty {
+      padding: 24px 18px;
+      border-radius: 22px;
+      border: 1px dashed rgba(148, 163, 184, 0.34);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .vacation-section {
+      padding: 14px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(226, 232, 240, 0.88);
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+    }
+
+    .vacation-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .vacation-section-title {
+      appearance: none;
+      border: none;
+      background: transparent;
+      padding: 0;
+      color: var(--text);
+      font: inherit;
+      font-size: 1.05rem;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .vacation-section-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .vacation-inline-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mini-input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(203, 213, 225, 0.78);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font: inherit;
+      font-size: 0.96rem;
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--text);
+    }
+
+    .mini-input:focus {
+      outline: 2px solid rgba(14, 165, 233, 0.16);
+      border-color: rgba(14, 165, 233, 0.65);
+    }
+
+    .mini-add {
+      min-width: 48px;
+      min-height: 48px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #fff;
+      font: inherit;
+      font-size: 1.4rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.18);
+    }
+
+    .vacation-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .vacation-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 12px 12px 10px;
+      border-radius: 18px;
+      background: rgba(248, 250, 252, 0.92);
+      border: 1px solid rgba(226, 232, 240, 0.86);
+      cursor: pointer;
+    }
+
+    .vacation-item.packed {
+      background: linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(220, 252, 231, 0.98));
+      border-color: rgba(134, 239, 172, 0.9);
+    }
+
+    .vacation-item.packed .item-check {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-color: var(--success);
+      color: #fff;
+    }
+
+    .vacation-item-name {
+      font-size: 1rem;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .vacation-item.packed .vacation-item-name {
+      text-decoration: line-through;
+      color: #166534;
+    }
+
+    .vacation-item-sub {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .vacation-footer {
+      padding-top: 14px;
+    }
+
     .sheet-head {
       display: flex;
       justify-content: space-between;
@@ -499,6 +737,11 @@
     .sheet-button.danger {
       color: #b91c1c;
       background: rgba(254, 242, 242, 0.98);
+    }
+
+    .sheet-button:disabled {
+      opacity: 0.45;
+      cursor: default;
     }
 
     .toast {
@@ -562,6 +805,28 @@
       .bottom-actions {
         grid-template-columns: 1fr;
       }
+
+      .top-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .vacation-modal {
+        inset: 8px;
+        width: calc(100vw - 16px);
+        max-height: calc(100dvh - 16px);
+      }
+
+      .vacation-head,
+      .vacation-body {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .vacation-toolbar,
+      .vacation-inline-form {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -577,7 +842,10 @@
             </div>
           </div>
         </div>
-        <button type="button" class="icon-btn" id="btn-menu">Viac</button>
+        <div class="top-actions">
+          <button type="button" class="icon-btn primary" id="btn-vacation">Balime</button>
+          <button type="button" class="icon-btn" id="btn-menu">Viac</button>
+        </div>
       </header>
 
       <section class="composer">
@@ -618,10 +886,36 @@
     </div>
   </aside>
 
+  <div class="vacation-backdrop" id="vacation-backdrop" hidden></div>
+
+  <aside class="vacation-modal" id="vacation-modal" aria-hidden="true">
+    <header class="vacation-head">
+      <div>
+        <h2 class="vacation-title">Balime dovolenku</h2>
+        <div class="vacation-subtitle">Vlastne sekcie, zdielane polozky a odfajkovanie ked je to zbalene.</div>
+      </div>
+      <button type="button" class="sheet-close" id="btn-close-vacation">X</button>
+    </header>
+
+    <div class="vacation-body">
+      <form class="vacation-toolbar" id="vacation-section-form">
+        <input class="input" id="vacation-section-name" type="text" autocomplete="off" placeholder="Nova sekcia napr. Drogeria" />
+        <button type="submit" class="btn btn-add" aria-label="Pridat sekciu">+</button>
+      </form>
+
+      <div class="vacation-board" id="vacation-board"></div>
+
+      <div class="vacation-footer">
+        <button type="button" class="sheet-button danger" id="btn-clear-vacation">Vymazat celu dovolenku</button>
+      </div>
+    </div>
+  </aside>
+
   <div class="toast" id="toast"></div>
 
   <script>
     const STORAGE_KEY = "nakupnyZoznam_neonMEGA_items";
+    const PACKING_KEY = "nakupnyZoznam_neonMEGA_packing_v1";
     const SYNC_KEY = "nakupnyZoznam_neonMEGA_sync_ts";
     const DEVICE_KEY = "nakupny_zoznam_device_v2";
     const UNSAVED_KEY = "nakupny_zoznam_unsaved_v2";
@@ -629,9 +923,11 @@
     const AUTO_SAVE_DELAY = 900;
     const PULL_THRESHOLD = 88;
     const FOREGROUND_SYNC_GAP = 8000;
+    const NAME_LIMIT = 60;
 
     const state = {
       items: [],
+      packing: { sections: [], items: [] },
       syncInProgress: false,
       unsaved: localStorage.getItem(UNSAVED_KEY) === "1",
       localRevision: 0,
@@ -640,6 +936,7 @@
       syncQueued: false,
       pull: null,
       menuOpen: false,
+      vacationOpen: false,
       lastForegroundSyncAt: 0
     };
 
@@ -704,6 +1001,16 @@
       }
     }
 
+    function loadLocalPacking() {
+      try {
+        const raw = localStorage.getItem(PACKING_KEY);
+        const parsed = raw ? JSON.parse(raw) : { sections: [], items: [] };
+        return normalizePacking(parsed);
+      } catch (error) {
+        return { sections: [], items: [] };
+      }
+    }
+
     function normalizeItems(items) {
       if (!Array.isArray(items)) return [];
 
@@ -749,6 +1056,100 @@
       });
     }
 
+    function normalizePacking(packing) {
+      const sourceSections = packing && Array.isArray(packing.sections) ? packing.sections : [];
+      const sourceItems = packing && Array.isArray(packing.items) ? packing.items : [];
+
+      const mergedSections = new Map();
+      sourceSections
+        .filter(section => section && typeof section.name === "string" && section.name.trim())
+        .forEach((section, index) => {
+          const normalized = {
+            id: section.id ? String(section.id) : uid(),
+            name: String(section.name || "").trim().slice(0, NAME_LIMIT),
+            order: Number.isFinite(Number(section.order)) ? Number(section.order) : index,
+            deleted: section.deleted === true,
+            updatedAt: section.updatedAt ? String(section.updatedAt) : "1970-01-01T00:00:00.000Z",
+            updatedById: section.updatedById ? String(section.updatedById) : "",
+            updatedByType: section.updatedByType === "mobile" ? "mobile" : (section.updatedByType === "desktop" ? "desktop" : ""),
+            updatedByLabel: section.updatedByLabel ? String(section.updatedByLabel) : ""
+          };
+
+          const current = mergedSections.get(normalized.id);
+          if (!current) {
+            mergedSections.set(normalized.id, normalized);
+            return;
+          }
+
+          const currentTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
+          const nextTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
+          if (nextTime >= currentTime) {
+            mergedSections.set(normalized.id, normalized);
+          }
+        });
+
+      const sections = Array.from(mergedSections.values()).sort((a, b) => {
+        if (a.order !== b.order) {
+          return a.order - b.order;
+        }
+
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      const visibleSectionIds = new Set(sections.map(section => section.id));
+      const mergedItems = new Map();
+
+      sourceItems
+        .filter(item => item && typeof item.name === "string" && item.name.trim())
+        .forEach((item, index) => {
+          const normalized = {
+            id: item.id ? String(item.id) : uid(),
+            sectionId: item.sectionId ? String(item.sectionId) : "",
+            name: String(item.name || "").trim().slice(0, NAME_LIMIT),
+            packed: Boolean(item.packed),
+            packedAt: item.packedAt ? String(item.packedAt) : null,
+            order: Number.isFinite(Number(item.order)) ? Number(item.order) : index,
+            deleted: item.deleted === true,
+            updatedAt: item.updatedAt ? String(item.updatedAt) : (item.packedAt ? String(item.packedAt) : "1970-01-01T00:00:00.000Z"),
+            updatedById: item.updatedById ? String(item.updatedById) : "",
+            updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
+            updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ""
+          };
+
+          if (!normalized.sectionId) {
+            return;
+          }
+
+          const current = mergedItems.get(normalized.id);
+          if (!current) {
+            mergedItems.set(normalized.id, normalized);
+            return;
+          }
+
+          const currentTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
+          const nextTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
+          if (nextTime >= currentTime) {
+            mergedItems.set(normalized.id, normalized);
+          }
+        });
+
+      const items = Array.from(mergedItems.values())
+        .filter(item => item.deleted || visibleSectionIds.has(item.sectionId))
+        .sort((a, b) => {
+          if (a.order !== b.order) {
+            return a.order - b.order;
+          }
+
+          const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return bTime - aTime;
+        });
+
+      return { sections, items };
+    }
+
     function visibleItems() {
       return normalizeItems(state.items).filter(item => !item.deleted);
     }
@@ -758,20 +1159,43 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
     }
 
+    function persistPacking() {
+      state.packing = normalizePacking(state.packing);
+      localStorage.setItem(PACKING_KEY, JSON.stringify(state.packing));
+    }
+
+    function mergePacking(serverPacking, localPacking) {
+      return normalizePacking({
+        sections: [
+          ...((serverPacking && serverPacking.sections) || []),
+          ...((localPacking && localPacking.sections) || [])
+        ],
+        items: [
+          ...((serverPacking && serverPacking.items) || []),
+          ...((localPacking && localPacking.items) || [])
+        ]
+      });
+    }
+
     function touchLocalRevision() {
       state.localRevision += 1;
       return state.localRevision;
     }
 
-    function applyServerItems(serverItems, requestRevision) {
+    function applyServerSnapshot(serverSnapshot, requestRevision) {
       const changedDuringRequest = state.localRevision !== requestRevision;
-      const normalizedServerItems = normalizeItems(serverItems);
+      const normalizedServerItems = normalizeItems(serverSnapshot && serverSnapshot.items);
+      const normalizedServerPacking = normalizePacking(serverSnapshot && serverSnapshot.packing);
 
       state.items = changedDuringRequest
         ? normalizeItems([...(normalizedServerItems || []), ...(state.items || [])])
         : normalizedServerItems;
+      state.packing = changedDuringRequest
+        ? mergePacking(normalizedServerPacking, state.packing)
+        : normalizedServerPacking;
 
       persistItems();
+      persistPacking();
       return changedDuringRequest;
     }
 
@@ -808,6 +1232,334 @@
         month: "2-digit",
         hour: "2-digit",
         minute: "2-digit"
+      });
+    }
+
+    function visiblePackingSections() {
+      return normalizePacking(state.packing).sections.filter(section => !section.deleted);
+    }
+
+    function visiblePackingItems(sectionId) {
+      return normalizePacking(state.packing).items.filter(item => !item.deleted && item.sectionId === sectionId);
+    }
+
+    function nextPackingSectionOrder() {
+      const sections = visiblePackingSections();
+      if (!sections.length) return 0;
+      return Math.max(...sections.map(section => Number.isFinite(Number(section.order)) ? Number(section.order) : 0)) + 1;
+    }
+
+    function nextPackingItemOrder(sectionId) {
+      const items = visiblePackingItems(sectionId);
+      if (!items.length) return 0;
+      return Math.max(...items.map(item => Number.isFinite(Number(item.order)) ? Number(item.order) : 0)) + 1;
+    }
+
+    function addPackingSection(name) {
+      const clean = String(name || "").trim().slice(0, NAME_LIMIT);
+      if (!clean) {
+        showToast("Pomenuj sekciu.");
+        return false;
+      }
+
+      state.packing.sections.push(stampItem({
+        id: uid(),
+        name: clean,
+        order: nextPackingSectionOrder(),
+        deleted: false
+      }));
+
+      touchLocalRevision();
+      persistPacking();
+      renderVacation();
+      scheduleAutoSave(400);
+      return true;
+    }
+
+    function renamePackingSection(id) {
+      const section = state.packing.sections.find(entry => entry.id === id && !entry.deleted);
+      if (!section) return;
+
+      const raw = window.prompt("Nazov sekcie", section.name || "");
+      if (raw === null) return;
+
+      const clean = raw.trim().slice(0, NAME_LIMIT);
+      if (!clean) {
+        showToast("Nazov ostal bez zmeny.");
+        return;
+      }
+
+      section.name = clean;
+      stampItem(section);
+      touchLocalRevision();
+      persistPacking();
+      renderVacation();
+      scheduleAutoSave(300);
+    }
+
+    function deletePackingSection(id) {
+      const section = state.packing.sections.find(entry => entry.id === id && !entry.deleted);
+      if (!section) return;
+
+      const timestamp = nowIso();
+      section.deleted = true;
+      stampItem(section, timestamp);
+
+      state.packing.items.forEach(item => {
+        if (item.sectionId === id && !item.deleted) {
+          item.deleted = true;
+          stampItem(item, timestamp);
+        }
+      });
+
+      touchLocalRevision();
+      persistPacking();
+      renderVacation();
+      scheduleAutoSave(300);
+      showToast("Sekcia vymazana.");
+    }
+
+    function addPackingItem(sectionId, name) {
+      const clean = String(name || "").trim().slice(0, NAME_LIMIT);
+      if (!clean) {
+        showToast("Napis, co treba zbalit.");
+        return false;
+      }
+
+      state.packing.items.push(stampItem({
+        id: uid(),
+        sectionId: sectionId,
+        name: clean,
+        packed: false,
+        packedAt: null,
+        order: nextPackingItemOrder(sectionId),
+        deleted: false
+      }));
+
+      touchLocalRevision();
+      persistPacking();
+      renderVacation();
+      scheduleAutoSave(350);
+      return true;
+    }
+
+    function togglePackingItem(id) {
+      const item = state.packing.items.find(entry => entry.id === id && !entry.deleted);
+      if (!item) return;
+
+      const timestamp = nowIso();
+      item.packed = !item.packed;
+      item.packedAt = item.packed ? timestamp : null;
+      stampItem(item, timestamp);
+
+      touchLocalRevision();
+      persistPacking();
+      renderVacation();
+      scheduleAutoSave(280);
+    }
+
+    function deletePackingItem(id) {
+      const item = state.packing.items.find(entry => entry.id === id && !entry.deleted);
+      if (!item) return;
+
+      item.deleted = true;
+      stampItem(item);
+      touchLocalRevision();
+      persistPacking();
+      renderVacation();
+      scheduleAutoSave(280);
+      showToast("Polozka vymazana.");
+    }
+
+    function clearVacationBoard() {
+      const sections = state.packing.sections.filter(section => section && !section.deleted);
+      const items = state.packing.items.filter(item => item && !item.deleted);
+      if (!sections.length && !items.length) {
+        showToast("Dovolenka je prazdna.");
+        return;
+      }
+
+      const confirmed = window.confirm("Naozaj vymazat celu dovolenku?");
+      if (!confirmed) {
+        return;
+      }
+
+      const timestamp = nowIso();
+      sections.forEach(section => {
+        section.deleted = true;
+        stampItem(section, timestamp);
+      });
+      items.forEach(item => {
+        item.deleted = true;
+        stampItem(item, timestamp);
+      });
+
+      touchLocalRevision();
+      persistPacking();
+      renderVacation();
+      scheduleAutoSave(300);
+      showToast("Dovolenkove balenie vymazane.");
+    }
+
+    function renderVacation() {
+      const board = document.getElementById("vacation-board");
+      const clearButton = document.getElementById("btn-clear-vacation");
+      if (!board) return;
+
+      board.innerHTML = "";
+      const sections = visiblePackingSections();
+
+      if (clearButton) {
+        clearButton.disabled = sections.length === 0;
+      }
+
+      if (!sections.length) {
+        const empty = document.createElement("div");
+        empty.className = "vacation-empty";
+        empty.innerHTML = [
+          "<strong>Zatial nic nebalite</strong>",
+          "<div>Pridaj si vlastnu sekciu, napriklad Drogeria alebo Lieky.</div>"
+        ].join("");
+        board.appendChild(empty);
+        return;
+      }
+
+      sections.forEach(section => {
+        const sectionCard = document.createElement("section");
+        sectionCard.className = "vacation-section";
+
+        const head = document.createElement("div");
+        head.className = "vacation-section-head";
+
+        const titleWrap = document.createElement("div");
+        titleWrap.style.minWidth = "0";
+
+        const titleButton = document.createElement("button");
+        titleButton.type = "button";
+        titleButton.className = "vacation-section-title";
+        titleButton.textContent = section.name;
+        titleButton.addEventListener("click", () => {
+          renamePackingSection(section.id);
+        });
+
+        const meta = document.createElement("div");
+        meta.className = "vacation-section-meta";
+        const sectionItems = visiblePackingItems(section.id);
+        const packedCount = sectionItems.filter(item => item.packed).length;
+        meta.textContent = packedCount + "/" + sectionItems.length + " zbalene";
+
+        titleWrap.appendChild(titleButton);
+        titleWrap.appendChild(meta);
+
+        const deleteSectionButton = document.createElement("button");
+        deleteSectionButton.type = "button";
+        deleteSectionButton.className = "item-delete";
+        deleteSectionButton.textContent = "X";
+        deleteSectionButton.addEventListener("click", () => {
+          deletePackingSection(section.id);
+        });
+
+        head.appendChild(titleWrap);
+        head.appendChild(deleteSectionButton);
+
+        const form = document.createElement("form");
+        form.className = "vacation-inline-form";
+
+        const input = document.createElement("input");
+        input.className = "mini-input";
+        input.type = "text";
+        input.autocomplete = "off";
+        input.placeholder = "Co treba zbalit?";
+
+        const addButton = document.createElement("button");
+        addButton.type = "submit";
+        addButton.className = "mini-add";
+        addButton.textContent = "+";
+
+        form.appendChild(input);
+        form.appendChild(addButton);
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          const added = addPackingItem(section.id, input.value);
+          if (added) {
+            input.value = "";
+            input.focus();
+          }
+        });
+
+        const itemsList = document.createElement("div");
+        itemsList.className = "vacation-items";
+
+        if (!sectionItems.length) {
+          const emptyItems = document.createElement("div");
+          emptyItems.className = "vacation-empty";
+          emptyItems.style.minHeight = "0";
+          emptyItems.style.padding = "14px";
+          emptyItems.innerHTML = "<div>Sem si dopisete, co este treba zbalit.</div>";
+          itemsList.appendChild(emptyItems);
+        } else {
+          sectionItems.forEach(item => {
+            const row = document.createElement("div");
+            row.className = "vacation-item" + (item.packed ? " packed" : "");
+            row.addEventListener("click", event => {
+              if (event.target.closest("button")) return;
+              togglePackingItem(item.id);
+            });
+
+            const check = document.createElement("div");
+            check.className = "item-check";
+            check.textContent = item.packed ? "OK" : "";
+
+            const main = document.createElement("div");
+            main.className = "item-main";
+
+            const name = document.createElement("div");
+            name.className = "vacation-item-name";
+            name.textContent = item.name;
+            main.appendChild(name);
+
+            const sub = document.createElement("div");
+            sub.className = "vacation-item-sub";
+
+            const source = sourceText(item);
+            if (source) {
+              const sourceChip = document.createElement("div");
+              sourceChip.className = "chip source";
+              sourceChip.textContent = source;
+              sub.appendChild(sourceChip);
+            }
+
+            if (item.packed && item.packedAt) {
+              const packedChip = document.createElement("div");
+              packedChip.className = "chip";
+              packedChip.textContent = formatDate(item.packedAt);
+              sub.appendChild(packedChip);
+            }
+
+            if (sub.children.length) {
+              main.appendChild(sub);
+            }
+
+            const del = document.createElement("button");
+            del.type = "button";
+            del.className = "item-delete";
+            del.textContent = "X";
+            del.addEventListener("click", event => {
+              event.stopPropagation();
+              deletePackingItem(item.id);
+            });
+
+            row.appendChild(check);
+            row.appendChild(main);
+            row.appendChild(del);
+            itemsList.appendChild(row);
+          });
+        }
+
+        sectionCard.appendChild(head);
+        sectionCard.appendChild(form);
+        sectionCard.appendChild(itemsList);
+        board.appendChild(sectionCard);
       });
     }
 
@@ -1147,13 +1899,21 @@
       showToast("Oznacene polozky vymazane.");
     }
 
-    function parseSyncItems(data) {
-      if (Array.isArray(data)) return normalizeItems(data);
-      if (data && Array.isArray(data.items)) return normalizeItems(data.items);
-      return [];
+    function parseSyncPayload(data) {
+      if (Array.isArray(data)) {
+        return {
+          items: normalizeItems(data),
+          packing: { sections: [], items: [] }
+        };
+      }
+
+      return {
+        items: data && Array.isArray(data.items) ? normalizeItems(data.items) : [],
+        packing: data && data.packing ? normalizePacking(data.packing) : { sections: [], items: [] }
+      };
     }
 
-    function fetchRemoteItems() {
+    function fetchRemoteData() {
       const attempts = [
         () => fetch(SHEETS_SYNC_URL + "?action=get", { method: "GET", cache: "no-store" }),
         () => fetch(SHEETS_SYNC_URL + "?action=load", { method: "GET", cache: "no-store" }),
@@ -1187,8 +1947,8 @@
               throw new Error(data.error || "Sheets sync error.");
             }
 
-            if (Array.isArray(data) || (data && Array.isArray(data.items))) {
-              return parseSyncItems(data);
+            if (Array.isArray(data) || (data && (Array.isArray(data.items) || data.packing))) {
+              return parseSyncPayload(data);
             }
 
             throw new Error("Unexpected sync response.");
@@ -1212,11 +1972,12 @@
       state.syncInProgress = true;
       setStatus("loading", "Nacitavam...");
 
-      return fetchRemoteItems()
-        .then(remoteItems => {
-          const changedDuringRequest = applyServerItems(remoteItems, requestRevision);
+      return fetchRemoteData()
+        .then(remoteSnapshot => {
+          const changedDuringRequest = applyServerSnapshot(remoteSnapshot, requestRevision);
           touchSyncSuccess();
           render();
+          renderVacation();
 
           if (changedDuringRequest) {
             setUnsaved(true);
@@ -1253,18 +2014,34 @@
       if (state.syncInProgress) return Promise.resolve(false);
 
       const requestRevision = state.localRevision;
-      const localSnapshot = normalizeItems(state.items);
+      const localSnapshot = {
+        items: normalizeItems(state.items),
+        packing: normalizePacking(state.packing)
+      };
       state.syncInProgress = true;
       setStatus("loading", "Ukladam...");
 
-      return fetchRemoteItems()
-        .then(remoteItems => {
-          const merged = normalizeItems([...(remoteItems || []), ...(localSnapshot || [])]);
+      return fetchRemoteData()
+        .then(remoteSnapshot => {
+          const merged = {
+            items: normalizeItems([
+              ...(((remoteSnapshot && remoteSnapshot.items) || [])),
+              ...((localSnapshot && localSnapshot.items) || [])
+            ]),
+            packing: mergePacking(
+              remoteSnapshot && remoteSnapshot.packing,
+              localSnapshot && localSnapshot.packing
+            )
+          };
 
           return fetch(SHEETS_SYNC_URL, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "sync", items: merged })
+            body: JSON.stringify({
+              action: "sync",
+              items: merged.items,
+              packing: merged.packing
+            })
           })
             .then(response => {
               if (!response.ok) {
@@ -1278,17 +2055,18 @@
                 throw new Error(data.error || "Sheets sync error.");
               }
 
-              if (Array.isArray(data) || (data && Array.isArray(data.items))) {
-                return parseSyncItems(data);
+              if (Array.isArray(data) || (data && (Array.isArray(data.items) || data.packing))) {
+                return parseSyncPayload(data);
               }
 
               return merged;
             });
         })
-        .then(finalItems => {
-          const changedDuringRequest = applyServerItems(finalItems, requestRevision);
+        .then(finalSnapshot => {
+          const changedDuringRequest = applyServerSnapshot(finalSnapshot, requestRevision);
           touchSyncSuccess();
           render();
+          renderVacation();
 
           if (changedDuringRequest) {
             setUnsaved(true);
@@ -1414,6 +2192,10 @@
     }
 
     function openMenu() {
+      if (state.vacationOpen) {
+        closeVacation();
+      }
+
       const backdrop = document.getElementById("menu-backdrop");
       const sheet = document.getElementById("menu-sheet");
       if (!backdrop || !sheet) return;
@@ -1438,6 +2220,41 @@
       sheet.setAttribute("aria-hidden", "true");
       setTimeout(() => {
         if (!state.menuOpen) {
+          backdrop.hidden = true;
+        }
+      }, 220);
+    }
+
+    function openVacation() {
+      if (state.menuOpen) {
+        closeMenu();
+      }
+
+      const backdrop = document.getElementById("vacation-backdrop");
+      const modal = document.getElementById("vacation-modal");
+      if (!backdrop || !modal) return;
+
+      state.vacationOpen = true;
+      renderVacation();
+      backdrop.hidden = false;
+      requestAnimationFrame(() => {
+        backdrop.classList.add("open");
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+      });
+    }
+
+    function closeVacation() {
+      const backdrop = document.getElementById("vacation-backdrop");
+      const modal = document.getElementById("vacation-modal");
+      if (!backdrop || !modal) return;
+
+      state.vacationOpen = false;
+      backdrop.classList.remove("open");
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      setTimeout(() => {
+        if (!state.vacationOpen) {
           backdrop.hidden = true;
         }
       }, 220);
@@ -1470,9 +2287,12 @@
         input.focus();
       });
 
+      document.getElementById("btn-vacation").addEventListener("click", openVacation);
       document.getElementById("btn-menu").addEventListener("click", openMenu);
       document.getElementById("btn-close-menu").addEventListener("click", closeMenu);
       document.getElementById("menu-backdrop").addEventListener("click", closeMenu);
+      document.getElementById("btn-close-vacation").addEventListener("click", closeVacation);
+      document.getElementById("vacation-backdrop").addEventListener("click", closeVacation);
       document.getElementById("btn-device").addEventListener("click", promptForDeviceName);
       document.getElementById("btn-refresh").addEventListener("click", () => {
         closeMenu();
@@ -1488,10 +2308,25 @@
       });
       document.getElementById("btn-mark-all").addEventListener("click", markAllBought);
       document.getElementById("btn-clear-checked").addEventListener("click", clearChecked);
+      document.getElementById("btn-clear-vacation").addEventListener("click", clearVacationBoard);
+      document.getElementById("vacation-section-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const input = document.getElementById("vacation-section-name");
+        const added = addPackingSection(input.value);
+        if (added) {
+          input.value = "";
+          input.focus();
+        }
+      });
 
       document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && state.menuOpen) {
-          closeMenu();
+        if (event.key === "Escape") {
+          if (state.menuOpen) {
+            closeMenu();
+          }
+          if (state.vacationOpen) {
+            closeVacation();
+          }
         }
       });
 
@@ -1512,9 +2347,11 @@
 
     function boot() {
       state.items = loadLocalItems();
+      state.packing = loadLocalPacking();
 
       updateDeviceUi();
       render();
+      renderVacation();
       updateStatusFromState();
       bindEvents();
       bindPullToRefresh();
