@@ -3,28 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#083344" />
   <link rel="manifest" href="manifest.json" />
-  <title>Nakupny zoznam</title>
+  <title>Nákupný zoznam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-1: #f472b6;
-      --bg-2: #38bdf8;
-      --bg-3: #1d4ed8;
-      --panel: rgba(255, 255, 255, 0.94);
-      --panel-strong: rgba(255, 255, 255, 0.98);
-      --text: #0f172a;
-      --muted: #64748b;
-      --border: rgba(148, 163, 184, 0.2);
-      --accent: #0ea5e9;
-      --accent-strong: #0284c7;
+      --bg-1: #fb923c;
+      --bg-2: #2dd4bf;
+      --bg-3: #0c4a6e;
+      --panel: rgba(250, 253, 255, 0.96);
+      --panel-strong: #ffffff;
+      --text: #10233b;
+      --muted: #61738a;
+      --border: rgba(148, 163, 184, 0.18);
+      --accent: #06a8c8;
+      --accent-strong: #087fa8;
       --success: #16a34a;
       --danger: #ef4444;
-      --shadow: 0 22px 48px rgba(15, 23, 42, 0.18);
-      --chip: rgba(241, 245, 249, 0.95);
+      --shadow: 0 28px 70px rgba(4, 32, 52, 0.24);
+      --chip: rgba(237, 244, 248, 0.96);
     }
 
     * {
@@ -48,10 +48,22 @@
       font-family: "Nunito", system-ui, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top left, rgba(244, 114, 182, 0.86), transparent 36%),
-        radial-gradient(circle at top right, rgba(56, 189, 248, 0.9), transparent 34%),
-        linear-gradient(140deg, #0f172a, #1e1b4b 44%, #164e63);
+        radial-gradient(circle at 5% 0%, rgba(251, 146, 60, 0.78), transparent 28%),
+        radial-gradient(circle at 96% 8%, rgba(45, 212, 191, 0.72), transparent 31%),
+        linear-gradient(145deg, #082f49 0%, #0c4a6e 48%, #164e63 100%);
       padding: 16px 12px 26px;
+      background-attachment: fixed;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.14;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.6) 0.7px, transparent 0.7px);
+      background-size: 18px 18px;
     }
 
     .app {
@@ -61,13 +73,35 @@
     }
 
     .shell {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92));
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 30px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(243, 249, 251, 0.965));
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 32px;
       box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       overflow: hidden;
+      position: relative;
+      animation: shell-enter 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .shell::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 5px;
+      background: linear-gradient(90deg, #fb923c, #facc15 33%, #2dd4bf 68%, #06a8c8);
+      z-index: 2;
+    }
+
+    @keyframes shell-enter {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     .topbar {
@@ -75,7 +109,10 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      padding: 18px 18px 8px;
+      padding: 22px 20px 10px;
+      background:
+        radial-gradient(circle at 88% 0%, rgba(45, 212, 191, 0.1), transparent 36%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent);
     }
 
     .top-actions {
@@ -92,9 +129,12 @@
     .title {
       margin: 0;
       font-family: "Baloo 2", system-ui, sans-serif;
-      font-size: 1.95rem;
-      line-height: 1;
-      letter-spacing: 0.02em;
+      font-size: 2.05rem;
+      line-height: 0.95;
+      letter-spacing: -0.025em;
+      text-wrap: balance;
+      color: #102a43;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
     }
 
     .status-row {
@@ -112,11 +152,12 @@
       gap: 8px;
       padding: 0 11px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.85);
-      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.16);
       color: var(--muted);
       font-size: 0.78rem;
       font-weight: 800;
+      box-shadow: 0 5px 16px rgba(16, 48, 64, 0.045);
     }
 
     .status-pill::before {
@@ -150,7 +191,8 @@
 
     .btn,
     .icon-btn,
-    .item-delete {
+    .item-delete,
+    .item-note-button {
       appearance: none;
       border: none;
       cursor: pointer;
@@ -162,27 +204,56 @@
       min-height: 44px;
       padding: 0 14px;
       border-radius: 999px;
-      background: rgba(15, 23, 42, 0.07);
+      background: rgba(231, 239, 243, 0.9);
       color: var(--text);
       font-weight: 800;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
     }
 
     .icon-btn.primary {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(2, 132, 199, 0.24));
-      color: #075985;
-      border: 1px solid rgba(14, 165, 233, 0.18);
-      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.12);
+      background: linear-gradient(135deg, #fff7d6, #fed7aa);
+      color: #9a4812;
+      border: 1px solid rgba(251, 146, 60, 0.2);
+      box-shadow: 0 9px 20px rgba(234, 88, 12, 0.12);
+    }
+
+    .icon-btn.primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vacation-button-icon {
+      min-width: 18px;
+      min-height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.05rem;
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+
+    .more-button {
+      width: 44px;
+      min-width: 44px;
+      padding: 0;
+      letter-spacing: 0.08em;
+      font-size: 1rem;
     }
 
     .icon-btn:active,
     .btn:active,
-    .item-delete:active {
+    .item-delete:active,
+    .item-note-button:active {
       transform: translateY(1px) scale(0.98);
     }
 
     .composer {
-      padding: 8px 18px 14px;
+      padding: 10px 20px 16px;
+      position: relative;
     }
 
     .composer-form {
@@ -192,48 +263,160 @@
       align-items: center;
     }
 
+    .composer-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .composer-hint {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .toggle-pill {
+      appearance: none;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 999px;
+      min-height: 34px;
+      padding: 0 12px;
+      background: rgba(236, 243, 247, 0.92);
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .toggle-pill::before {
+      content: "\26A1";
+      margin-right: 6px;
+      color: #f59e0b;
+    }
+
+    .toggle-pill.active {
+      background: linear-gradient(135deg, rgba(207, 250, 254, 0.98), rgba(204, 251, 241, 0.98));
+      border-color: rgba(13, 148, 136, 0.24);
+      color: #0f6474;
+    }
+
     .input-wrap {
       position: relative;
+      z-index: 12;
     }
 
     .input {
       width: 100%;
       min-width: 0;
-      border: 1px solid rgba(203, 213, 225, 0.78);
-      border-radius: 20px;
+      border: 1px solid rgba(186, 204, 215, 0.68);
+      border-radius: 19px;
       padding: 16px 18px;
       font: inherit;
       font-size: 1.05rem;
-      background: rgba(255, 255, 255, 0.96);
+      background: rgba(255, 255, 255, 0.99);
       color: var(--text);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      box-shadow: 0 9px 24px rgba(15, 50, 65, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
     }
 
     .input:focus {
-      outline: 2px solid rgba(14, 165, 233, 0.16);
-      border-color: rgba(14, 165, 233, 0.65);
+      outline: none;
+      border-color: rgba(6, 168, 200, 0.68);
+      box-shadow: 0 0 0 4px rgba(6, 168, 200, 0.11), 0 12px 28px rgba(8, 127, 168, 0.1);
+    }
+
+    .shopping-suggestions {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      display: grid;
+      gap: 4px;
+      padding: 7px;
+      border: 1px solid rgba(188, 205, 215, 0.68);
+      border-radius: 17px;
+      background: rgba(255, 255, 255, 0.985);
+      box-shadow: 0 18px 40px rgba(8, 47, 73, 0.16);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 20;
+    }
+
+    .shopping-suggestions[hidden] {
+      display: none;
+    }
+
+    .shopping-suggestion {
+      appearance: none;
+      width: 100%;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 11px;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .shopping-suggestion::after {
+      content: "+";
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9px;
+      background: rgba(207, 250, 254, 0.9);
+      color: #0e6072;
+      font-size: 1rem;
+      flex-shrink: 0;
     }
 
     .btn-add {
       width: 56px;
       height: 56px;
-      border-radius: 18px;
+      border-radius: 19px;
       background: linear-gradient(135deg, var(--accent), var(--accent-strong));
       color: #fff;
       font-size: 1.7rem;
       font-weight: 800;
-      box-shadow: 0 14px 28px rgba(14, 165, 233, 0.22);
+      box-shadow: 0 14px 28px rgba(6, 168, 200, 0.25);
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-add::after {
+      content: "";
+      position: absolute;
+      inset: 1px 1px auto;
+      height: 44%;
+      border-radius: 18px 18px 50% 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent);
+      pointer-events: none;
     }
 
     .list-wrapper {
-      padding: 0 18px 18px;
+      padding: 0 20px 18px;
     }
 
     .bottom-actions {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
-      padding: 0 18px 18px;
+      padding: 2px 20px 20px;
     }
 
     .bottom-button {
@@ -241,7 +424,7 @@
       padding: 0 14px;
       border: 1px solid rgba(148, 163, 184, 0.18);
       border-radius: 16px;
-      background: rgba(248, 250, 252, 0.94);
+      background: rgba(255, 255, 255, 0.72);
       color: var(--text);
       font: inherit;
       font-weight: 800;
@@ -292,12 +475,16 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 10px 4px 2px;
+      margin: 12px 4px 3px;
       color: var(--muted);
       font-size: 0.8rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+      width: fit-content;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(222, 241, 246, 0.68);
     }
 
     .group-title::before {
@@ -314,29 +501,36 @@
       box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
     }
 
+    .group-title.done {
+      background: rgba(220, 252, 231, 0.62);
+      color: #3f6f55;
+    }
+
     .item {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
       gap: 12px;
       align-items: center;
-      padding: 14px 14px 14px 12px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(226, 232, 240, 0.86);
-      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+      padding: 13px 13px 13px 12px;
+      border-radius: 19px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      box-shadow: 0 8px 20px rgba(16, 48, 64, 0.075), inset 3px 0 0 rgba(6, 168, 200, 0.58);
       cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
     }
 
     .item.bought {
-      background: linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(220, 252, 231, 0.98));
-      border-color: rgba(134, 239, 172, 0.92);
+      background: linear-gradient(135deg, rgba(240, 253, 244, 0.95), rgba(220, 252, 231, 0.88));
+      border-color: rgba(187, 247, 208, 0.9);
+      box-shadow: 0 7px 18px rgba(22, 101, 52, 0.055), inset 3px 0 0 rgba(34, 197, 94, 0.5);
     }
 
     .item-check {
       width: 36px;
       height: 36px;
-      border-radius: 13px;
-      border: 2px solid rgba(148, 163, 184, 0.86);
+      border-radius: 12px;
+      border: 2px solid rgba(132, 158, 174, 0.76);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -344,6 +538,7 @@
       color: transparent;
       font-weight: 900;
       flex-shrink: 0;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
     }
 
     .item.bought .item-check {
@@ -360,7 +555,7 @@
     }
 
     .item-name {
-      font-size: 1.12rem;
+      font-size: 1.1rem;
       font-weight: 800;
       word-break: break-word;
     }
@@ -394,14 +589,63 @@
     }
 
     .item-delete {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 999px;
-      background: rgba(254, 226, 226, 0.86);
+      background: rgba(254, 226, 226, 0.74);
       color: #b91c1c;
       font-size: 0.9rem;
       font-weight: 900;
       flex-shrink: 0;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    .item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .item-note-button {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: rgba(232, 240, 244, 0.9);
+      color: #475569;
+      font-size: 0.98rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+      flex-shrink: 0;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    .item-note-button.has-notes {
+      background: linear-gradient(135deg, rgba(207, 250, 254, 0.98), rgba(204, 251, 241, 0.98));
+      color: #0e6072;
+      box-shadow: 0 8px 18px rgba(6, 168, 200, 0.13);
+    }
+
+    .item-note-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.66rem;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fff;
+      line-height: 1;
     }
 
     .empty {
@@ -417,6 +661,14 @@
       background: rgba(255, 255, 255, 0.56);
       border: 1px dashed rgba(148, 163, 184, 0.35);
       border-radius: 24px;
+    }
+
+    .empty::before {
+      content: "\1F6D2";
+      display: block;
+      margin-bottom: 4px;
+      font-size: 2.1rem;
+      filter: drop-shadow(0 8px 12px rgba(6, 168, 200, 0.16));
     }
 
     .empty-title {
@@ -448,8 +700,8 @@
       width: min(560px, calc(100vw - 20px));
       margin: 0 auto 10px;
       padding: 16px;
-      border-radius: 26px;
-      background: rgba(255, 255, 255, 0.98);
+      border-radius: 28px;
+      background: linear-gradient(180deg, #ffffff, #f3f8fa);
       box-shadow: 0 26px 56px rgba(15, 23, 42, 0.26);
       transform: translateY(110%);
       transition: transform 0.24s ease;
@@ -458,6 +710,122 @@
 
     .menu-sheet.open {
       transform: translateY(0);
+    }
+
+    .notes-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.36);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 66;
+    }
+
+    .notes-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .notes-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: min(560px, calc(100vw - 20px));
+      max-height: min(72vh, 640px);
+      margin: 0 auto 10px;
+      padding: 16px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #ffffff, #f4fafb);
+      box-shadow: 0 28px 60px rgba(15, 23, 42, 0.26);
+      transform: translateY(110%);
+      transition: transform 0.24s ease;
+      z-index: 70;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+    }
+
+    .notes-sheet.open {
+      transform: translateY(0);
+    }
+
+    .notes-status-row {
+      margin-top: 10px;
+    }
+
+    .notes-body {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+      min-height: 120px;
+    }
+
+    .notes-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 4px;
+    }
+
+    .note-empty {
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px dashed rgba(148, 163, 184, 0.32);
+      background: rgba(248, 250, 252, 0.88);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .note-row {
+      display: flex;
+    }
+
+    .note-row.mine {
+      justify-content: flex-end;
+    }
+
+    .note-bubble {
+      max-width: min(88%, 420px);
+      padding: 12px 14px;
+      border-radius: 18px 18px 18px 8px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(218, 228, 234, 0.82);
+      box-shadow: 0 8px 20px rgba(16, 48, 64, 0.07);
+    }
+
+    .note-row.mine .note-bubble {
+      border-radius: 18px 18px 8px 18px;
+      background: linear-gradient(135deg, rgba(207, 250, 254, 0.98), rgba(204, 251, 241, 0.95));
+      border-color: rgba(94, 234, 212, 0.64);
+    }
+
+    .note-meta {
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .note-text {
+      font-size: 0.95rem;
+      line-height: 1.45;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .notes-composer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
     }
 
     .vacation-backdrop {
@@ -483,8 +851,10 @@
       margin: auto;
       display: flex;
       flex-direction: column;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
-      border-radius: 28px;
+      background:
+        radial-gradient(circle at 95% 0%, rgba(153, 246, 228, 0.2), transparent 30%),
+        linear-gradient(180deg, #fbfeff, #edf6f7);
+      border-radius: 30px;
       border: 1px solid rgba(255, 255, 255, 0.6);
       box-shadow: 0 28px 64px rgba(15, 23, 42, 0.28);
       transform: translateY(24px) scale(0.98);
@@ -506,9 +876,9 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      padding: 18px 18px 12px;
-      border-bottom: 1px solid rgba(226, 232, 240, 0.9);
-      background: rgba(255, 255, 255, 0.76);
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid rgba(204, 220, 227, 0.68);
+      background: rgba(255, 255, 255, 0.82);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
     }
@@ -518,6 +888,14 @@
       font-family: "Baloo 2", system-ui, sans-serif;
       font-size: 1.6rem;
       line-height: 1;
+      color: #123047;
+    }
+
+    .vacation-title::before {
+      content: "\1F3D6\FE0F";
+      margin-right: 8px;
+      font-family: "Nunito", system-ui, sans-serif;
+      font-size: 1.2rem;
     }
 
     .vacation-subtitle {
@@ -526,10 +904,14 @@
       font-size: 0.88rem;
     }
 
+    .vacation-status-row {
+      margin-top: 10px;
+    }
+
     .vacation-body {
       flex: 1;
       overflow-y: auto;
-      padding: 14px 18px 18px;
+      padding: 16px 20px 20px;
       scrollbar-width: none;
     }
 
@@ -541,6 +923,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
+      align-items: center;
       margin-bottom: 14px;
     }
 
@@ -561,10 +944,50 @@
 
     .vacation-section {
       padding: 14px;
-      border-radius: 24px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(226, 232, 240, 0.88);
-      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(255, 255, 255, 0.92);
+      box-shadow: 0 10px 26px rgba(16, 48, 64, 0.07);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vacation-section:not(.important)::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: linear-gradient(180deg, #2dd4bf, #06a8c8);
+    }
+
+    .vacation-section.important {
+      background: linear-gradient(145deg, rgba(255, 248, 247, 0.99), rgba(254, 226, 226, 0.86));
+      border-color: rgba(252, 165, 165, 0.54);
+      box-shadow: 0 14px 30px rgba(220, 38, 38, 0.1);
+    }
+
+    .vacation-section.important .vacation-section-title {
+      color: #991b1b;
+      cursor: pointer;
+    }
+
+    .vacation-section.important .vacation-section-meta {
+      color: #b91c1c;
+    }
+
+    .vacation-section.important .mini-input:focus {
+      outline-color: rgba(239, 68, 68, 0.14);
+      border-color: rgba(239, 68, 68, 0.62);
+    }
+
+    .vacation-section.important .mini-add {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 10px 22px rgba(220, 38, 38, 0.18);
+    }
+
+    .vacation-section.important .vacation-item {
+      background: rgba(255, 255, 255, 0.82);
+      border-color: rgba(254, 202, 202, 0.92);
     }
 
     .vacation-section-head {
@@ -573,6 +996,20 @@
       justify-content: space-between;
       gap: 10px;
       margin-bottom: 12px;
+    }
+
+    .vacation-section.collapsed .vacation-section-head {
+      margin-bottom: 0;
+    }
+
+    .vacation-section.collapsed .vacation-inline-form,
+    .vacation-section.collapsed .vacation-items {
+      display: none;
+    }
+
+    .vacation-section-title-wrap {
+      min-width: 0;
+      flex: 1;
     }
 
     .vacation-section-title {
@@ -585,6 +1022,49 @@
       font-size: 1.05rem;
       font-weight: 800;
       text-align: left;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .vacation-section-title:disabled {
+      opacity: 1;
+    }
+
+    .vacation-section-chevron {
+      color: var(--muted);
+      font-size: 1.4rem;
+      line-height: 1;
+      transform: rotate(90deg);
+      transition: transform 0.18s ease;
+      flex-shrink: 0;
+    }
+
+    .vacation-section.collapsed .vacation-section-chevron {
+      transform: rotate(0deg);
+    }
+
+    .vacation-section-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .vacation-section-edit {
+      appearance: none;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(226, 238, 243, 0.88);
+      color: #496579;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 900;
       cursor: pointer;
     }
 
@@ -599,13 +1079,14 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 8px;
+      align-items: center;
       margin-bottom: 10px;
     }
 
     .mini-input {
       width: 100%;
       min-width: 0;
-      border: 1px solid rgba(203, 213, 225, 0.78);
+      border: 1px solid rgba(188, 205, 215, 0.72);
       border-radius: 16px;
       padding: 12px 14px;
       font: inherit;
@@ -615,22 +1096,25 @@
     }
 
     .mini-input:focus {
-      outline: 2px solid rgba(14, 165, 233, 0.16);
-      border-color: rgba(14, 165, 233, 0.65);
+      outline: none;
+      border-color: rgba(6, 168, 200, 0.66);
+      box-shadow: 0 0 0 3px rgba(6, 168, 200, 0.1);
     }
 
     .mini-add {
-      min-width: 48px;
-      min-height: 48px;
+      width: 46px;
+      height: 46px;
+      min-width: 46px;
+      min-height: 46px;
       border: none;
-      border-radius: 16px;
+      border-radius: 14px;
       background: linear-gradient(135deg, var(--accent), var(--accent-strong));
       color: #fff;
       font: inherit;
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.18);
+      box-shadow: 0 10px 22px rgba(6, 168, 200, 0.2);
     }
 
     .vacation-items {
@@ -645,10 +1129,11 @@
       gap: 10px;
       align-items: center;
       padding: 12px 12px 12px 10px;
-      border-radius: 18px;
-      background: rgba(248, 250, 252, 0.92);
-      border: 1px solid rgba(226, 232, 240, 0.86);
+      border-radius: 17px;
+      background: rgba(240, 246, 248, 0.9);
+      border: 1px solid rgba(225, 235, 239, 0.72);
       cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
     }
 
     .vacation-item.packed {
@@ -709,11 +1194,12 @@
       height: 38px;
       border: none;
       border-radius: 999px;
-      background: rgba(15, 23, 42, 0.08);
+      background: rgba(225, 234, 239, 0.9);
       color: var(--text);
       font: inherit;
       font-weight: 800;
       cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
     }
 
     .sheet-actions {
@@ -726,12 +1212,13 @@
       padding: 0 16px;
       border: 1px solid rgba(148, 163, 184, 0.18);
       border-radius: 16px;
-      background: rgba(248, 250, 252, 0.95);
+      background: rgba(255, 255, 255, 0.82);
       color: var(--text);
       font: inherit;
       font-weight: 800;
       text-align: left;
       cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
     }
 
     .sheet-button.danger {
@@ -763,6 +1250,37 @@
       text-align: center;
     }
 
+    button:focus-visible {
+      outline: 3px solid rgba(45, 212, 191, 0.34);
+      outline-offset: 2px;
+    }
+
+    @media (hover: hover) {
+      .item:hover,
+      .vacation-item:hover {
+        transform: translateY(-1px);
+      }
+
+      .item:hover {
+        box-shadow: 0 12px 26px rgba(16, 48, 64, 0.1);
+      }
+
+      .icon-btn:hover,
+      .btn-add:hover,
+      .sheet-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .item-delete:hover,
+      .sheet-close:hover {
+        background: rgba(254, 202, 202, 0.86);
+      }
+
+      .shopping-suggestion:hover {
+        background: rgba(236, 248, 250, 0.9);
+      }
+    }
+
     .toast.show {
       transform: translateX(-50%) translateY(0);
       opacity: 1;
@@ -770,11 +1288,11 @@
 
     @media (max-width: 520px) {
       body {
-        padding: 10px 10px 20px;
+        padding: 8px 8px 18px;
       }
 
       .topbar {
-        padding: 16px 16px 8px;
+        padding: 18px 16px 8px;
       }
 
       .composer,
@@ -785,11 +1303,20 @@
       }
 
       .title {
-        font-size: 1.78rem;
+        font-size: 1.82rem;
       }
 
       .composer-form {
         gap: 8px;
+      }
+
+      .composer-meta {
+        align-items: stretch;
+        margin-top: 8px;
+      }
+
+      .composer-hint {
+        display: none;
       }
 
       .input {
@@ -804,11 +1331,17 @@
 
       .bottom-actions {
         grid-template-columns: 1fr;
+        gap: 8px;
       }
 
       .top-actions {
         flex-wrap: wrap;
         justify-content: flex-end;
+        gap: 6px;
+      }
+
+      .icon-btn.primary {
+        padding: 0 12px;
       }
 
       .vacation-modal {
@@ -825,7 +1358,28 @@
 
       .vacation-toolbar,
       .vacation-inline-form {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .vacation-section {
+        padding: 12px;
+        border-radius: 20px;
+      }
+
+      .vacation-item {
+        gap: 8px;
+        padding: 11px 10px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
       }
     }
   </style>
@@ -835,26 +1389,36 @@
     <div class="shell">
       <header class="topbar">
         <div class="title-wrap">
-          <h1 class="title">Nakupny zoznam</h1>
+          <h1 class="title">Nákupný zoznam</h1>
           <div class="status-row">
             <div class="status-pill" id="sync-status-pill">
-              <span id="sync-status-text">Pripravene</span>
+              <span id="sync-status-text">Pripravené</span>
             </div>
           </div>
         </div>
         <div class="top-actions">
-          <button type="button" class="icon-btn primary" id="btn-vacation">Balime</button>
-          <button type="button" class="icon-btn" id="btn-menu">Viac</button>
+          <button type="button" class="icon-btn primary" id="btn-vacation">
+            <span class="vacation-button-icon" aria-hidden="true">&#127958;&#65039;</span>
+            <span>Balíme</span>
+          </button>
+          <button type="button" class="icon-btn more-button" id="btn-menu" aria-label="Viac možností">
+            <span aria-hidden="true">&bull;&bull;&bull;</span>
+          </button>
         </div>
       </header>
 
       <section class="composer">
         <form id="add-form" class="composer-form">
           <div class="input-wrap">
-            <input class="input" id="input-name" type="text" autocomplete="off" placeholder="Co treba kupit?" />
+            <input class="input" id="input-name" type="text" autocomplete="off" enterkeyhint="done" placeholder="Čo treba kúpiť?" />
+            <div class="shopping-suggestions" id="shopping-suggestions" hidden></div>
           </div>
-          <button type="submit" class="btn btn-add" aria-label="Pridat">+</button>
+          <button type="submit" class="btn btn-add" aria-label="Pridať">+</button>
         </form>
+        <div class="composer-meta">
+          <button type="button" class="toggle-pill" id="btn-quick-add" aria-pressed="false">Rýchle pridávanie</button>
+          <div class="composer-hint" id="quick-add-hint">Po Enter pridáš položku a kurzor zostane pripravený.</div>
+        </div>
       </section>
 
       <section class="list-wrapper">
@@ -863,8 +1427,8 @@
       </section>
 
       <section class="bottom-actions">
-        <button type="button" class="bottom-button" id="btn-mark-all">Oznacit vsetko</button>
-        <button type="button" class="bottom-button danger" id="btn-clear-checked">Vymazat odskrtnute</button>
+        <button type="button" class="bottom-button" id="btn-mark-all">Označiť všetko</button>
+        <button type="button" class="bottom-button danger" id="btn-clear-checked">Vymazať odškrtnuté</button>
       </section>
     </div>
   </div>
@@ -875,15 +1439,39 @@
     <div class="sheet-head">
       <div>
         <div class="sheet-title">Viac</div>
-        <div class="sheet-subtitle" id="device-summary">Zariadenie nie je nastavene</div>
+        <div class="sheet-subtitle" id="device-summary">Zariadenie nie je nastavené</div>
       </div>
-      <button type="button" class="sheet-close" id="btn-close-menu">X</button>
+      <button type="button" class="sheet-close" id="btn-close-menu" aria-label="Zavrieť">×</button>
     </div>
     <div class="sheet-actions">
-      <button type="button" class="sheet-button" id="btn-device">Premenovat zariadenie</button>
-      <button type="button" class="sheet-button" id="btn-refresh">Nacitat zo Sheets</button>
-      <button type="button" class="sheet-button" id="btn-sync-now">Ulozit teraz</button>
+      <button type="button" class="sheet-button" id="btn-device">Premenovať zariadenie</button>
+      <button type="button" class="sheet-button" id="btn-refresh">Načítať zo Sheets</button>
+      <button type="button" class="sheet-button" id="btn-sync-now">Uložiť teraz</button>
     </div>
+  </aside>
+
+  <div class="notes-backdrop" id="notes-backdrop" hidden></div>
+
+  <aside class="notes-sheet" id="notes-sheet" aria-hidden="true">
+    <div class="sheet-head">
+      <div>
+        <div class="sheet-title">Poznámky</div>
+        <div class="sheet-subtitle" id="notes-item-title">Vyber si položku na poznámky.</div>
+        <div class="status-row notes-status-row">
+          <div class="status-pill" id="notes-sync-status-pill">
+            <span id="notes-sync-status-text">Pripravené</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="sheet-close" id="btn-close-notes" aria-label="Zavrieť">×</button>
+    </div>
+    <div class="notes-body">
+      <div class="notes-list" id="notes-list"></div>
+    </div>
+    <form class="notes-composer" id="notes-form">
+      <input class="mini-input" id="notes-input" type="text" autocomplete="off" enterkeyhint="send" placeholder="Napíš poznámku..." />
+      <button type="submit" class="mini-add" aria-label="Pridať poznámku">+</button>
+    </form>
   </aside>
 
   <div class="vacation-backdrop" id="vacation-backdrop" hidden></div>
@@ -891,22 +1479,27 @@
   <aside class="vacation-modal" id="vacation-modal" aria-hidden="true">
     <header class="vacation-head">
       <div>
-        <h2 class="vacation-title">Balime dovolenku</h2>
-        <div class="vacation-subtitle">Vlastne sekcie, zdielane polozky a odfajkovanie ked je to zbalene.</div>
+        <h2 class="vacation-title">Balíme dovolenku</h2>
+        <div class="vacation-subtitle">Spoločné balenie pre Domi a Peťa.</div>
+        <div class="status-row vacation-status-row">
+          <div class="status-pill" id="vacation-sync-status-pill">
+            <span id="vacation-sync-status-text">Pripravené</span>
+          </div>
+        </div>
       </div>
-      <button type="button" class="sheet-close" id="btn-close-vacation">X</button>
+      <button type="button" class="sheet-close" id="btn-close-vacation" aria-label="Zavrieť">×</button>
     </header>
 
     <div class="vacation-body">
       <form class="vacation-toolbar" id="vacation-section-form">
-        <input class="input" id="vacation-section-name" type="text" autocomplete="off" placeholder="Nova sekcia napr. Drogeria" />
-        <button type="submit" class="btn btn-add" aria-label="Pridat sekciu">+</button>
+        <input class="mini-input" id="vacation-section-name" type="text" autocomplete="off" placeholder="Nová sekcia, napr. Drogéria" />
+        <button type="submit" class="mini-add" aria-label="Pridať sekciu">+</button>
       </form>
 
       <div class="vacation-board" id="vacation-board"></div>
 
       <div class="vacation-footer">
-        <button type="button" class="sheet-button danger" id="btn-clear-vacation">Vymazat celu dovolenku</button>
+        <button type="button" class="sheet-button danger" id="btn-clear-vacation">Vymazať celú dovolenku</button>
       </div>
     </div>
   </aside>
@@ -916,7 +1509,11 @@
   <script>
     const STORAGE_KEY = "nakupnyZoznam_neonMEGA_items";
     const PACKING_KEY = "nakupnyZoznam_neonMEGA_packing_v1";
+    const DRAFTS_KEY = "nakupnyZoznam_neonMEGA_drafts_v1";
     const SYNC_KEY = "nakupnyZoznam_neonMEGA_sync_ts";
+    const QUICK_ADD_KEY = "nakupnyZoznam_neonMEGA_quick_add_v1";
+    const ITEM_HISTORY_KEY = "nakupnyZoznam_item_history_v1";
+    const COLLAPSED_SECTIONS_KEY = "nakupnyZoznam_collapsed_sections_v1";
     const DEVICE_KEY = "nakupny_zoznam_device_v2";
     const UNSAVED_KEY = "nakupny_zoznam_unsaved_v2";
     const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbw260UlklkZ4KEtiTvfHtvRr_z3R1Te5Ne3Foch9e38nBuWaeo1Y9eRY7dLKqONmyquFg/exec";
@@ -924,6 +1521,9 @@
     const PULL_THRESHOLD = 88;
     const FOREGROUND_SYNC_GAP = 8000;
     const NAME_LIMIT = 60;
+    const NOTE_LIMIT = 240;
+    const TYPING_GUARD_MS = 1800;
+    const IMPORTANT_SECTION_ID = "__important__";
 
     const state = {
       items: [],
@@ -931,11 +1531,20 @@
       syncInProgress: false,
       unsaved: localStorage.getItem(UNSAVED_KEY) === "1",
       localRevision: 0,
+      drafts: loadDrafts(),
+      quickAdd: localStorage.getItem(QUICK_ADD_KEY) === "1",
+      itemHistory: loadItemHistory(),
+      collapsedSections: loadCollapsedSections(),
+      lastTypingAt: 0,
+      pendingForegroundRefresh: false,
       toastTimer: null,
       syncTimer: null,
       syncQueued: false,
       pull: null,
       menuOpen: false,
+      notesOpen: false,
+      noteItemId: "",
+      noteItemKind: "shopping",
       vacationOpen: false,
       lastForegroundSyncAt: 0
     };
@@ -952,6 +1561,21 @@
 
     function nowIso() {
       return new Date().toISOString();
+    }
+
+    function haptic(duration) {
+      if (!navigator || typeof navigator.vibrate !== "function") return;
+
+      try {
+        navigator.vibrate(typeof duration === "number" ? duration : 12);
+      } catch (error) {
+        // Vibration is optional and unsupported browsers simply ignore it.
+      }
+    }
+
+    function timeMs(value) {
+      const timestamp = value ? new Date(value).getTime() : 0;
+      return Number.isFinite(timestamp) ? timestamp : 0;
     }
 
     function detectDeviceType() {
@@ -1011,6 +1635,238 @@
       }
     }
 
+    function loadDrafts() {
+      const fallback = {
+        shoppingName: "",
+        vacationSectionName: "",
+        packingItems: {},
+        itemNotes: {}
+      };
+
+      try {
+        const raw = localStorage.getItem(DRAFTS_KEY);
+        const parsed = raw ? JSON.parse(raw) : fallback;
+        return {
+          shoppingName: parsed && typeof parsed.shoppingName === "string" ? parsed.shoppingName : "",
+          vacationSectionName: parsed && typeof parsed.vacationSectionName === "string" ? parsed.vacationSectionName : "",
+          packingItems: parsed && parsed.packingItems && typeof parsed.packingItems === "object" ? parsed.packingItems : {},
+          itemNotes: parsed && parsed.itemNotes && typeof parsed.itemNotes === "object" ? parsed.itemNotes : {}
+        };
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function normalizeHistoryKey(value) {
+      return String(value || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("sk-SK");
+    }
+
+    function loadItemHistory() {
+      try {
+        const raw = localStorage.getItem(ITEM_HISTORY_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          return {};
+        }
+
+        const history = {};
+        Object.keys(parsed).forEach(key => {
+          const entry = parsed[key];
+          if (!entry || typeof entry.name !== "string" || !entry.name.trim()) return;
+
+          const normalizedKey = normalizeHistoryKey(entry.name);
+          history[normalizedKey] = {
+            name: entry.name.trim().slice(0, NAME_LIMIT),
+            count: Math.max(1, Number(entry.count) || 1),
+            lastUsedAt: entry.lastUsedAt ? String(entry.lastUsedAt) : "1970-01-01T00:00:00.000Z"
+          };
+        });
+        return history;
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function persistItemHistory() {
+      const entries = Object.entries(state.itemHistory || {})
+        .sort((left, right) => {
+          const countDelta = Number(right[1].count || 0) - Number(left[1].count || 0);
+          return countDelta || timeMs(right[1].lastUsedAt) - timeMs(left[1].lastUsedAt);
+        })
+        .slice(0, 80);
+
+      state.itemHistory = Object.fromEntries(entries);
+      localStorage.setItem(ITEM_HISTORY_KEY, JSON.stringify(state.itemHistory));
+    }
+
+    function rememberItemName(name) {
+      const clean = String(name || "").trim().replace(/\s+/g, " ").slice(0, NAME_LIMIT);
+      const key = normalizeHistoryKey(clean);
+      if (!key) return;
+
+      const current = state.itemHistory[key];
+      state.itemHistory[key] = {
+        name: clean,
+        count: Math.min(999, (current ? Number(current.count) || 0 : 0) + 1),
+        lastUsedAt: nowIso()
+      };
+      persistItemHistory();
+    }
+
+    function seedItemHistory(items) {
+      let changed = false;
+      normalizeItems(items)
+        .forEach(item => {
+          const key = normalizeHistoryKey(item.name);
+          if (!key || state.itemHistory[key]) return;
+
+          state.itemHistory[key] = {
+            name: item.name,
+            count: 1,
+            lastUsedAt: item.updatedAt || nowIso()
+          };
+          changed = true;
+        });
+
+      if (changed) {
+        persistItemHistory();
+      }
+    }
+
+    function loadCollapsedSections() {
+      try {
+        const raw = localStorage.getItem(COLLAPSED_SECTIONS_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(parsed) ? parsed.map(String) : []);
+      } catch (error) {
+        return new Set();
+      }
+    }
+
+    function persistCollapsedSections() {
+      localStorage.setItem(
+        COLLAPSED_SECTIONS_KEY,
+        JSON.stringify(Array.from(state.collapsedSections || []))
+      );
+    }
+
+    function togglePackingSectionCollapse(sectionId) {
+      if (state.collapsedSections.has(sectionId)) {
+        state.collapsedSections.delete(sectionId);
+      } else {
+        state.collapsedSections.add(sectionId);
+      }
+
+      persistCollapsedSections();
+      haptic(8);
+      renderVacation();
+    }
+
+    function getShoppingSuggestions(query) {
+      const cleanQuery = normalizeHistoryKey(query);
+      if (!cleanQuery) return [];
+
+      const activeNames = new Set(visibleItems().map(item => normalizeHistoryKey(item.name)));
+      return Object.values(state.itemHistory || {})
+        .map(entry => ({
+          name: entry.name,
+          key: normalizeHistoryKey(entry.name),
+          count: Number(entry.count) || 1,
+          lastUsedAt: entry.lastUsedAt || ""
+        }))
+        .filter(entry => (
+          entry.key &&
+          !activeNames.has(entry.key) &&
+          entry.key.includes(cleanQuery)
+        ))
+        .sort((left, right) => {
+          const leftStarts = left.key.startsWith(cleanQuery) ? 1 : 0;
+          const rightStarts = right.key.startsWith(cleanQuery) ? 1 : 0;
+          if (leftStarts !== rightStarts) return rightStarts - leftStarts;
+          if (left.count !== right.count) return right.count - left.count;
+          return timeMs(right.lastUsedAt) - timeMs(left.lastUsedAt);
+        })
+        .slice(0, 5);
+    }
+
+    function hideShoppingSuggestions() {
+      const container = document.getElementById("shopping-suggestions");
+      if (!container) return;
+      container.hidden = true;
+      container.innerHTML = "";
+    }
+
+    function renderShoppingSuggestions() {
+      const input = document.getElementById("input-name");
+      const container = document.getElementById("shopping-suggestions");
+      if (!input || !container || document.activeElement !== input) {
+        hideShoppingSuggestions();
+        return;
+      }
+
+      const suggestions = getShoppingSuggestions(input.value);
+      if (!suggestions.length) {
+        hideShoppingSuggestions();
+        return;
+      }
+
+      container.innerHTML = "";
+      suggestions.forEach(suggestion => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "shopping-suggestion";
+        button.textContent = suggestion.name;
+        button.addEventListener("click", () => {
+          input.value = suggestion.name;
+          setDraftValue("shoppingName", input.value);
+          hideShoppingSuggestions();
+          submitShoppingInput({ keepFocus: true });
+        });
+        container.appendChild(button);
+      });
+      container.hidden = false;
+    }
+
+    function normalizeNotes(notes) {
+      if (!Array.isArray(notes)) return [];
+
+      const merged = new Map();
+      notes
+        .filter(note => note && typeof note.text === "string" && note.text.trim())
+        .forEach(note => {
+          const normalized = {
+            id: note.id ? String(note.id) : uid(),
+            text: String(note.text || "").trim(),
+            createdAt: note.createdAt ? String(note.createdAt) : (note.updatedAt ? String(note.updatedAt) : nowIso()),
+            updatedAt: note.updatedAt ? String(note.updatedAt) : (note.createdAt ? String(note.createdAt) : nowIso()),
+            authorId: note.authorId ? String(note.authorId) : "",
+            authorType: note.authorType === "mobile" ? "mobile" : (note.authorType === "desktop" ? "desktop" : ""),
+            authorLabel: note.authorLabel ? String(note.authorLabel) : ""
+          };
+
+          const current = merged.get(normalized.id);
+          if (!current || timeMs(normalized.updatedAt) >= timeMs(current.updatedAt)) {
+            merged.set(normalized.id, normalized);
+          }
+        });
+
+      return Array.from(merged.values()).sort((a, b) => {
+        const createdDelta = timeMs(a.createdAt) - timeMs(b.createdAt);
+        if (createdDelta !== 0) {
+          return createdDelta;
+        }
+
+        return timeMs(a.updatedAt) - timeMs(b.updatedAt);
+      });
+    }
+
+    function mergeNotes(left, right) {
+      return normalizeNotes([...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])]);
+    }
+
     function normalizeItems(items) {
       if (!Array.isArray(items)) return [];
 
@@ -1029,7 +1885,8 @@
             deleted: item.deleted === true,
             updatedById: item.updatedById ? String(item.updatedById) : "",
             updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
-            updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ""
+            updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : "",
+            notes: normalizeNotes(item.notes)
           };
 
           const current = merged.get(normalized.id);
@@ -1038,11 +1895,12 @@
             return;
           }
 
-          const currentTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
-          const nextTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
-          if (nextTime >= currentTime) {
-            merged.set(normalized.id, normalized);
-          }
+          const currentTime = timeMs(current.updatedAt);
+          const nextTime = timeMs(normalized.updatedAt);
+          const preferred = nextTime >= currentTime ? normalized : current;
+          merged.set(normalized.id, Object.assign({}, preferred, {
+            notes: mergeNotes(current.notes, normalized.notes)
+          }));
         });
 
       return Array.from(merged.values()).sort((a, b) => {
@@ -1050,9 +1908,7 @@
           return a.order - b.order;
         }
 
-        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-        return bTime - aTime;
+        return timeMs(b.updatedAt) - timeMs(a.updatedAt);
       });
     }
 
@@ -1115,7 +1971,8 @@
             updatedAt: item.updatedAt ? String(item.updatedAt) : (item.packedAt ? String(item.packedAt) : "1970-01-01T00:00:00.000Z"),
             updatedById: item.updatedById ? String(item.updatedById) : "",
             updatedByType: item.updatedByType === "mobile" ? "mobile" : (item.updatedByType === "desktop" ? "desktop" : ""),
-            updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ""
+            updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : "",
+            notes: normalizeNotes(item.notes)
           };
 
           if (!normalized.sectionId) {
@@ -1130,13 +1987,14 @@
 
           const currentTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
           const nextTime = normalized.updatedAt ? new Date(normalized.updatedAt).getTime() : 0;
-          if (nextTime >= currentTime) {
-            mergedItems.set(normalized.id, normalized);
-          }
+          const preferred = nextTime >= currentTime ? normalized : current;
+          mergedItems.set(normalized.id, Object.assign({}, preferred, {
+            notes: mergeNotes(current.notes, normalized.notes)
+          }));
         });
 
       const items = Array.from(mergedItems.values())
-        .filter(item => item.deleted || visibleSectionIds.has(item.sectionId))
+        .filter(item => item.deleted || item.sectionId === IMPORTANT_SECTION_ID || visibleSectionIds.has(item.sectionId))
         .sort((a, b) => {
           if (a.order !== b.order) {
             return a.order - b.order;
@@ -1162,6 +2020,175 @@
     function persistPacking() {
       state.packing = normalizePacking(state.packing);
       localStorage.setItem(PACKING_KEY, JSON.stringify(state.packing));
+    }
+
+    function persistDrafts() {
+      state.drafts = {
+        shoppingName: state.drafts && typeof state.drafts.shoppingName === "string" ? state.drafts.shoppingName : "",
+        vacationSectionName: state.drafts && typeof state.drafts.vacationSectionName === "string" ? state.drafts.vacationSectionName : "",
+        packingItems: state.drafts && state.drafts.packingItems && typeof state.drafts.packingItems === "object"
+          ? state.drafts.packingItems
+          : {},
+        itemNotes: state.drafts && state.drafts.itemNotes && typeof state.drafts.itemNotes === "object"
+          ? state.drafts.itemNotes
+          : {}
+      };
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(state.drafts));
+    }
+
+    function persistQuickAdd() {
+      if (state.quickAdd) {
+        localStorage.setItem(QUICK_ADD_KEY, "1");
+        return;
+      }
+
+      localStorage.removeItem(QUICK_ADD_KEY);
+    }
+
+    function markTyping() {
+      state.lastTypingAt = Date.now();
+    }
+
+    function isTextLikeElement(element) {
+      return !!element && (
+        element.tagName === "INPUT" ||
+        element.tagName === "TEXTAREA" ||
+        element.isContentEditable === true
+      );
+    }
+
+    function hasActiveDrafts() {
+      if (!state.drafts) return false;
+      if (state.drafts.shoppingName && state.drafts.shoppingName.trim()) return true;
+      if (state.drafts.vacationSectionName && state.drafts.vacationSectionName.trim()) return true;
+
+      const packingDrafts = state.drafts.packingItems || {};
+      if (Object.keys(packingDrafts).some(key => {
+        const value = packingDrafts[key];
+        return typeof value === "string" && value.trim();
+      })) {
+        return true;
+      }
+
+      const noteDrafts = state.drafts.itemNotes || {};
+      return Object.keys(noteDrafts).some(key => {
+        const value = noteDrafts[key];
+        return typeof value === "string" && value.trim();
+      });
+    }
+
+    function isTypingProtected() {
+      const recentTyping = Date.now() - state.lastTypingAt < TYPING_GUARD_MS;
+      const activeElement = document.activeElement;
+      return recentTyping || isTextLikeElement(activeElement) || hasActiveDrafts();
+    }
+
+    function queueForegroundRefresh() {
+      state.pendingForegroundRefresh = true;
+    }
+
+    function flushDeferredForegroundRefresh() {
+      if (!state.pendingForegroundRefresh) {
+        return Promise.resolve(false);
+      }
+
+      if (state.syncInProgress || state.unsaved || isTypingProtected()) {
+        return Promise.resolve(false);
+      }
+
+      state.pendingForegroundRefresh = false;
+      return loadFromSheets(false);
+    }
+
+    function setDraftValue(key, value) {
+      state.drafts[key] = value;
+      persistDrafts();
+      markTyping();
+    }
+
+    function focusShoppingInput() {
+      const input = document.getElementById("input-name");
+      if (!input) return;
+
+      markTyping();
+
+      const focusNow = () => {
+        input.focus({ preventScroll: true });
+        if (typeof input.setSelectionRange === "function") {
+          const end = input.value.length;
+          input.setSelectionRange(end, end);
+        }
+      };
+
+      focusNow();
+      requestAnimationFrame(focusNow);
+      setTimeout(focusNow, 120);
+    }
+
+    function updateQuickAddUi() {
+      const button = document.getElementById("btn-quick-add");
+      const hint = document.getElementById("quick-add-hint");
+      const input = document.getElementById("input-name");
+
+      if (button) {
+        button.classList.toggle("active", state.quickAdd);
+        button.setAttribute("aria-pressed", state.quickAdd ? "true" : "false");
+        button.textContent = state.quickAdd ? "Rýchle pridávanie: zapnuté" : "Rýchle pridávanie";
+      }
+
+      if (hint) {
+        hint.textContent = state.quickAdd
+          ? "Enter pridá ďalšiu položku a kurzor zostane v poli."
+          : "Zapni pre sériové pridávanie bez ťukania navyše.";
+      }
+
+      if (input) {
+        input.setAttribute("enterkeyhint", state.quickAdd ? "next" : "done");
+      }
+    }
+
+    function toggleQuickAdd() {
+      state.quickAdd = !state.quickAdd;
+      persistQuickAdd();
+      updateQuickAddUi();
+
+      if (state.quickAdd) {
+        focusShoppingInput();
+        showToast("Rýchle pridávanie zapnuté.");
+        return;
+      }
+
+      showToast("Rýchle pridávanie vypnuté.");
+    }
+
+    function setPackingItemDraft(sectionId, value) {
+      if (!state.drafts.packingItems) {
+        state.drafts.packingItems = {};
+      }
+      state.drafts.packingItems[sectionId] = value;
+      persistDrafts();
+      markTyping();
+    }
+
+    function clearPackingItemDraft(sectionId) {
+      if (!state.drafts.packingItems) return;
+      delete state.drafts.packingItems[sectionId];
+      persistDrafts();
+    }
+
+    function setItemNoteDraft(itemId, value) {
+      if (!state.drafts.itemNotes) {
+        state.drafts.itemNotes = {};
+      }
+      state.drafts.itemNotes[itemId] = value;
+      persistDrafts();
+      markTyping();
+    }
+
+    function clearItemNoteDraft(itemId) {
+      if (!state.drafts.itemNotes) return;
+      delete state.drafts.itemNotes[itemId];
+      persistDrafts();
     }
 
     function mergePacking(serverPacking, localPacking) {
@@ -1194,6 +2221,7 @@
         ? mergePacking(normalizedServerPacking, state.packing)
         : normalizedServerPacking;
 
+      seedItemHistory(state.items);
       persistItems();
       persistPacking();
       return changedDuringRequest;
@@ -1221,6 +2249,188 @@
       return item.updatedByType === "mobile" ? "Z mobilu" : "Z PC";
     }
 
+    function findNoteItemById(id, kind) {
+      if (kind === "packing") {
+        return state.packing.items.find(entry => entry && entry.id === id);
+      }
+
+      return state.items.find(entry => entry && entry.id === id);
+    }
+
+    function noteCount(item) {
+      return normalizeNotes(item && item.notes).length;
+    }
+
+    function noteAuthorText(note) {
+      if (!note) return "";
+
+      if (note.authorId && note.authorId === device.id) {
+        return "Ty";
+      }
+
+      if (note.authorLabel) {
+        return note.authorLabel;
+      }
+
+      return note.authorType === "mobile" ? "Mobil" : "PC";
+    }
+
+    function closeNotes() {
+      const backdrop = document.getElementById("notes-backdrop");
+      const sheet = document.getElementById("notes-sheet");
+      if (!backdrop || !sheet) return;
+
+      state.notesOpen = false;
+      state.noteItemId = "";
+      state.noteItemKind = "shopping";
+      backdrop.classList.remove("open");
+      sheet.classList.remove("open");
+      sheet.setAttribute("aria-hidden", "true");
+      setTimeout(() => {
+        if (!state.notesOpen) {
+          backdrop.hidden = true;
+        }
+      }, 220);
+    }
+
+    function renderNotesPanel(options) {
+      const item = state.noteItemId ? findNoteItemById(state.noteItemId, state.noteItemKind) : null;
+      const title = document.getElementById("notes-item-title");
+      const list = document.getElementById("notes-list");
+      const input = document.getElementById("notes-input");
+      if (!title || !list || !input) return;
+
+      if (!item || item.deleted) {
+        list.innerHTML = "";
+        title.textContent = "Vyber si položku na poznámky.";
+        if (state.notesOpen) {
+          closeNotes();
+        }
+        return;
+      }
+
+      title.textContent = item.name;
+      list.innerHTML = "";
+
+      const notes = normalizeNotes(item.notes);
+      if (!notes.length) {
+        const empty = document.createElement("div");
+        empty.className = "note-empty";
+        empty.innerHTML = [
+          "<strong>Zatiaľ bez poznámok</strong>",
+          "<div>Sem si môžete nechať krátke odkazy alebo odpovede k tejto položke.</div>"
+        ].join("");
+        list.appendChild(empty);
+      } else {
+        notes.forEach(note => {
+          const row = document.createElement("div");
+          row.className = "note-row" + (note.authorId === device.id ? " mine" : "");
+
+          const bubble = document.createElement("div");
+          bubble.className = "note-bubble";
+
+          const meta = document.createElement("div");
+          meta.className = "note-meta";
+          meta.textContent = noteAuthorText(note) + " • " + formatDate(note.createdAt || note.updatedAt);
+
+          const text = document.createElement("div");
+          text.className = "note-text";
+          text.textContent = note.text;
+
+          bubble.appendChild(meta);
+          bubble.appendChild(text);
+          row.appendChild(bubble);
+          list.appendChild(row);
+        });
+      }
+
+      input.value = state.drafts.itemNotes && typeof state.drafts.itemNotes[item.id] === "string"
+        ? state.drafts.itemNotes[item.id]
+        : "";
+
+      if (options && options.focusInput) {
+        requestAnimationFrame(() => {
+          input.focus({ preventScroll: true });
+          if (typeof input.setSelectionRange === "function") {
+            const end = input.value.length;
+            input.setSelectionRange(end, end);
+          }
+        });
+      }
+
+      if (options && options.scrollToBottom) {
+        requestAnimationFrame(() => {
+          list.scrollTop = list.scrollHeight;
+        });
+      }
+    }
+
+    function openNotes(itemId, kind) {
+      const itemKind = kind === "packing" ? "packing" : "shopping";
+      const item = findNoteItemById(itemId, itemKind);
+      if (!item || item.deleted) return;
+
+      if (state.menuOpen) {
+        closeMenu();
+      }
+      if (state.vacationOpen && itemKind !== "packing") {
+        closeVacation();
+      }
+
+      const backdrop = document.getElementById("notes-backdrop");
+      const sheet = document.getElementById("notes-sheet");
+      if (!backdrop || !sheet) return;
+
+      state.noteItemId = itemId;
+      state.noteItemKind = itemKind;
+      state.notesOpen = true;
+      renderNotesPanel({ scrollToBottom: true });
+      backdrop.hidden = false;
+      requestAnimationFrame(() => {
+        backdrop.classList.add("open");
+        sheet.classList.add("open");
+        sheet.setAttribute("aria-hidden", "false");
+      });
+    }
+
+    function addItemNote(itemId, text) {
+      const item = findNoteItemById(itemId, state.noteItemKind);
+      if (!item || item.deleted) {
+        return false;
+      }
+
+      const clean = String(text || "").trim().slice(0, NOTE_LIMIT);
+      if (!clean) {
+        showToast("Napíš poznámku.");
+        return false;
+      }
+
+      const timestamp = nowIso();
+      item.notes = mergeNotes(item.notes, [{
+        id: uid(),
+        text: clean,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        authorId: device.id,
+        authorType: device.type,
+        authorLabel: device.label
+      }]);
+      stampItem(item, timestamp);
+
+      touchLocalRevision();
+      if (state.noteItemKind === "packing") {
+        persistPacking();
+        renderVacation();
+      } else {
+        persistItems();
+        render();
+      }
+      clearItemNoteDraft(itemId);
+      renderNotesPanel({ scrollToBottom: true, focusInput: true });
+      scheduleAutoSave(280);
+      return true;
+    }
+
     function formatDate(value) {
       if (!value) return "";
 
@@ -1240,7 +2450,21 @@
     }
 
     function visiblePackingItems(sectionId) {
-      return normalizePacking(state.packing).items.filter(item => !item.deleted && item.sectionId === sectionId);
+      return normalizePacking(state.packing).items
+        .filter(item => !item.deleted && item.sectionId === sectionId)
+        .sort((left, right) => {
+          if (left.packed !== right.packed) {
+            return left.packed ? 1 : -1;
+          }
+
+          const leftOrder = Number.isFinite(Number(left.order)) ? Number(left.order) : 0;
+          const rightOrder = Number.isFinite(Number(right.order)) ? Number(right.order) : 0;
+          if (leftOrder !== rightOrder) {
+            return leftOrder - rightOrder;
+          }
+
+          return timeMs(right.updatedAt) - timeMs(left.updatedAt);
+        });
     }
 
     function nextPackingSectionOrder() {
@@ -1273,6 +2497,9 @@
       persistPacking();
       renderVacation();
       scheduleAutoSave(400);
+      haptic(12);
+      state.drafts.vacationSectionName = "";
+      persistDrafts();
       return true;
     }
 
@@ -1280,12 +2507,12 @@
       const section = state.packing.sections.find(entry => entry.id === id && !entry.deleted);
       if (!section) return;
 
-      const raw = window.prompt("Nazov sekcie", section.name || "");
+      const raw = window.prompt("Názov sekcie", section.name || "");
       if (raw === null) return;
 
       const clean = raw.trim().slice(0, NAME_LIMIT);
       if (!clean) {
-        showToast("Nazov ostal bez zmeny.");
+        showToast("Názov ostal bez zmeny.");
         return;
       }
 
@@ -1312,17 +2539,19 @@
         }
       });
 
+      state.collapsedSections.delete(id);
+      persistCollapsedSections();
       touchLocalRevision();
       persistPacking();
       renderVacation();
       scheduleAutoSave(300);
-      showToast("Sekcia vymazana.");
+      showToast("Sekcia vymazaná.");
     }
 
     function addPackingItem(sectionId, name) {
       const clean = String(name || "").trim().slice(0, NAME_LIMIT);
       if (!clean) {
-        showToast("Napis, co treba zbalit.");
+        showToast("Napíš, čo treba zbaliť.");
         return false;
       }
 
@@ -1333,13 +2562,16 @@
         packed: false,
         packedAt: null,
         order: nextPackingItemOrder(sectionId),
-        deleted: false
+        deleted: false,
+        notes: []
       }));
 
       touchLocalRevision();
       persistPacking();
+      clearPackingItemDraft(sectionId);
       renderVacation();
       scheduleAutoSave(350);
+      haptic(12);
       return true;
     }
 
@@ -1356,6 +2588,7 @@
       persistPacking();
       renderVacation();
       scheduleAutoSave(280);
+      haptic(item.packed ? 18 : 8);
     }
 
     function deletePackingItem(id) {
@@ -1364,22 +2597,25 @@
 
       item.deleted = true;
       stampItem(item);
+      if (state.notesOpen && state.noteItemKind === "packing" && state.noteItemId === id) {
+        closeNotes();
+      }
       touchLocalRevision();
       persistPacking();
       renderVacation();
       scheduleAutoSave(280);
-      showToast("Polozka vymazana.");
+      showToast("Položka vymazaná.");
     }
 
     function clearVacationBoard() {
       const sections = state.packing.sections.filter(section => section && !section.deleted);
       const items = state.packing.items.filter(item => item && !item.deleted);
       if (!sections.length && !items.length) {
-        showToast("Dovolenka je prazdna.");
+        showToast("Dovolenka je prázdna.");
         return;
       }
 
-      const confirmed = window.confirm("Naozaj vymazat celu dovolenku?");
+      const confirmed = window.confirm("Naozaj vymazať celú dovolenku?");
       if (!confirmed) {
         return;
       }
@@ -1394,11 +2630,54 @@
         stampItem(item, timestamp);
       });
 
+      state.collapsedSections.clear();
+      persistCollapsedSections();
       touchLocalRevision();
       persistPacking();
       renderVacation();
       scheduleAutoSave(300);
-      showToast("Dovolenkove balenie vymazane.");
+      showToast("Dovolenkové balenie vymazané.");
+    }
+
+    function captureVacationFocusState() {
+      if (!state.vacationOpen) return null;
+
+      const active = document.activeElement;
+      if (!isTextLikeElement(active)) return null;
+
+      if (active && active.id === "vacation-section-name") {
+        return {
+          type: "section-name",
+          start: typeof active.selectionStart === "number" ? active.selectionStart : null,
+          end: typeof active.selectionEnd === "number" ? active.selectionEnd : null
+        };
+      }
+
+      if (active && active.dataset && active.dataset.sectionId) {
+        return {
+          type: "section-item",
+          sectionId: active.dataset.sectionId,
+          start: typeof active.selectionStart === "number" ? active.selectionStart : null,
+          end: typeof active.selectionEnd === "number" ? active.selectionEnd : null
+        };
+      }
+
+      return null;
+    }
+
+    function restoreVacationFocusState(focusState) {
+      if (!focusState) return;
+
+      const target = focusState.type === "section-name"
+        ? document.getElementById("vacation-section-name")
+        : document.querySelector('input[data-section-id="' + focusState.sectionId + '"]');
+
+      if (!target) return;
+
+      target.focus();
+      if (typeof focusState.start === "number" && typeof target.setSelectionRange === "function") {
+        target.setSelectionRange(focusState.start, typeof focusState.end === "number" ? focusState.end : focusState.start);
+      }
     }
 
     function renderVacation() {
@@ -1406,61 +2685,88 @@
       const clearButton = document.getElementById("btn-clear-vacation");
       if (!board) return;
 
+      const focusState = captureVacationFocusState();
       board.innerHTML = "";
       const sections = visiblePackingSections();
+      const importantItems = visiblePackingItems(IMPORTANT_SECTION_ID);
 
       if (clearButton) {
-        clearButton.disabled = sections.length === 0;
+        clearButton.disabled = sections.length === 0 && importantItems.length === 0;
       }
 
-      if (!sections.length) {
-        const empty = document.createElement("div");
-        empty.className = "vacation-empty";
-        empty.innerHTML = [
-          "<strong>Zatial nic nebalite</strong>",
-          "<div>Pridaj si vlastnu sekciu, napriklad Drogeria alebo Lieky.</div>"
-        ].join("");
-        board.appendChild(empty);
-        return;
-      }
+      const displayedSections = [{
+        id: IMPORTANT_SECTION_ID,
+        name: "Dôležité pred cestou",
+        important: true
+      }].concat(sections);
 
-      sections.forEach(section => {
+      displayedSections.forEach(section => {
+        const isCollapsed = state.collapsedSections.has(section.id);
         const sectionCard = document.createElement("section");
-        sectionCard.className = "vacation-section";
+        sectionCard.className = "vacation-section" +
+          (section.important ? " important" : "") +
+          (isCollapsed ? " collapsed" : "");
 
         const head = document.createElement("div");
         head.className = "vacation-section-head";
 
         const titleWrap = document.createElement("div");
-        titleWrap.style.minWidth = "0";
+        titleWrap.className = "vacation-section-title-wrap";
 
         const titleButton = document.createElement("button");
         titleButton.type = "button";
         titleButton.className = "vacation-section-title";
-        titleButton.textContent = section.name;
+        titleButton.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+
+        const titleText = document.createElement("span");
+        titleText.textContent = section.important ? "\u2757 " + section.name : section.name;
+
+        const chevron = document.createElement("span");
+        chevron.className = "vacation-section-chevron";
+        chevron.setAttribute("aria-hidden", "true");
+        chevron.textContent = "\u203A";
+
+        titleButton.appendChild(titleText);
+        titleButton.appendChild(chevron);
         titleButton.addEventListener("click", () => {
-          renamePackingSection(section.id);
+          togglePackingSectionCollapse(section.id);
         });
 
         const meta = document.createElement("div");
         meta.className = "vacation-section-meta";
         const sectionItems = visiblePackingItems(section.id);
         const packedCount = sectionItems.filter(item => item.packed).length;
-        meta.textContent = packedCount + "/" + sectionItems.length + " zbalene";
+        meta.textContent = packedCount + "/" + sectionItems.length + " zbalené";
 
         titleWrap.appendChild(titleButton);
         titleWrap.appendChild(meta);
 
-        const deleteSectionButton = document.createElement("button");
-        deleteSectionButton.type = "button";
-        deleteSectionButton.className = "item-delete";
-        deleteSectionButton.textContent = "X";
-        deleteSectionButton.addEventListener("click", () => {
-          deletePackingSection(section.id);
-        });
-
         head.appendChild(titleWrap);
-        head.appendChild(deleteSectionButton);
+        if (!section.important) {
+          const sectionActions = document.createElement("div");
+          sectionActions.className = "vacation-section-actions";
+
+          const editSectionButton = document.createElement("button");
+          editSectionButton.type = "button";
+          editSectionButton.className = "vacation-section-edit";
+          editSectionButton.textContent = "\u270E";
+          editSectionButton.setAttribute("aria-label", "Premenovať sekciu");
+          editSectionButton.addEventListener("click", () => {
+            renamePackingSection(section.id);
+          });
+
+          const deleteSectionButton = document.createElement("button");
+          deleteSectionButton.type = "button";
+          deleteSectionButton.className = "item-delete";
+          deleteSectionButton.textContent = "×";
+          deleteSectionButton.addEventListener("click", () => {
+            deletePackingSection(section.id);
+          });
+
+          sectionActions.appendChild(editSectionButton);
+          sectionActions.appendChild(deleteSectionButton);
+          head.appendChild(sectionActions);
+        }
 
         const form = document.createElement("form");
         form.className = "vacation-inline-form";
@@ -1469,7 +2775,19 @@
         input.className = "mini-input";
         input.type = "text";
         input.autocomplete = "off";
-        input.placeholder = "Co treba zbalit?";
+        input.placeholder = section.important ? "Čo nesmieme zabudnúť?" : "Čo treba zbaliť?";
+        input.dataset.sectionId = section.id;
+        input.value = state.drafts.packingItems && typeof state.drafts.packingItems[section.id] === "string"
+          ? state.drafts.packingItems[section.id]
+          : "";
+        input.addEventListener("input", () => {
+          setPackingItemDraft(section.id, input.value);
+        });
+        input.addEventListener("blur", () => {
+          window.setTimeout(() => {
+            flushDeferredForegroundRefresh();
+          }, 120);
+        });
 
         const addButton = document.createElement("button");
         addButton.type = "submit";
@@ -1482,8 +2800,7 @@
           event.preventDefault();
           const added = addPackingItem(section.id, input.value);
           if (added) {
-            input.value = "";
-            input.focus();
+            flushDeferredForegroundRefresh();
           }
         });
 
@@ -1495,7 +2812,9 @@
           emptyItems.className = "vacation-empty";
           emptyItems.style.minHeight = "0";
           emptyItems.style.padding = "14px";
-          emptyItems.innerHTML = "<div>Sem si dopisete, co este treba zbalit.</div>";
+          emptyItems.innerHTML = section.important
+            ? "<div>Napríklad poistenie alebo diaľničná známka.</div>"
+            : "<div>Sem si dopíšete, čo ešte treba zbaliť.</div>";
           itemsList.appendChild(emptyItems);
         } else {
           sectionItems.forEach(item => {
@@ -1540,18 +2859,40 @@
               main.appendChild(sub);
             }
 
+            const actions = document.createElement("div");
+            actions.className = "item-actions";
+
+            const notesButton = document.createElement("button");
+            notesButton.type = "button";
+            notesButton.className = "item-note-button" + (noteCount(item) ? " has-notes" : "");
+            notesButton.setAttribute("aria-label", noteCount(item) ? ("Otvorit poznamky, sprav: " + noteCount(item)) : "Pridat poznamku");
+            notesButton.textContent = "\uD83D\uDCAC";
+            notesButton.addEventListener("click", event => {
+              event.stopPropagation();
+              openNotes(item.id, "packing");
+            });
+
+            if (noteCount(item)) {
+              const badge = document.createElement("span");
+              badge.className = "item-note-badge";
+              badge.textContent = noteCount(item) > 9 ? "9+" : String(noteCount(item));
+              notesButton.appendChild(badge);
+            }
+
             const del = document.createElement("button");
             del.type = "button";
             del.className = "item-delete";
-            del.textContent = "X";
+            del.textContent = "×";
             del.addEventListener("click", event => {
               event.stopPropagation();
               deletePackingItem(item.id);
             });
 
+            actions.appendChild(notesButton);
+            actions.appendChild(del);
             row.appendChild(check);
             row.appendChild(main);
-            row.appendChild(del);
+            row.appendChild(actions);
             itemsList.appendChild(row);
           });
         }
@@ -1561,6 +2902,18 @@
         sectionCard.appendChild(itemsList);
         board.appendChild(sectionCard);
       });
+
+      if (!sections.length) {
+        const empty = document.createElement("div");
+        empty.className = "vacation-empty";
+        empty.innerHTML = [
+          "<strong>Zatiaľ nemáte bežnú sekciu</strong>",
+          "<div>Hore si pridaj napríklad Drogériu, Lieky alebo Elektroniku.</div>"
+        ].join("");
+        board.appendChild(empty);
+      }
+
+      restoreVacationFocusState(focusState);
     }
 
     function showToast(message) {
@@ -1580,15 +2933,21 @@
     }
 
     function setStatus(mode, text) {
-      const pill = document.getElementById("sync-status-pill");
-      const label = document.getElementById("sync-status-text");
-      if (!pill || !label) return;
+      [
+        ["sync-status-pill", "sync-status-text"],
+        ["notes-sync-status-pill", "notes-sync-status-text"],
+        ["vacation-sync-status-pill", "vacation-sync-status-text"]
+      ].forEach(([pillId, labelId]) => {
+        const pill = document.getElementById(pillId);
+        const label = document.getElementById(labelId);
+        if (!pill || !label) return;
 
-      pill.classList.remove("loading", "synced", "saving", "error");
-      if (mode) {
-        pill.classList.add(mode);
-      }
-      label.textContent = text;
+        pill.classList.remove("loading", "synced", "saving", "error");
+        if (mode) {
+          pill.classList.add(mode);
+        }
+        label.textContent = text;
+      });
     }
 
     function touchSyncSuccess() {
@@ -1611,19 +2970,19 @@
 
       if (state.unsaved) {
         if (state.syncTimer) {
-          setStatus("saving", "Ukladam...");
+        setStatus("saving", "Ukladám...");
           return;
         }
-        setStatus("error", "Caka na ulozenie");
+        setStatus("error", "Čaká na uloženie");
         return;
       }
 
       if (localStorage.getItem(SYNC_KEY)) {
-        setStatus("synced", "Aktualne");
+        setStatus("synced", "Aktuálne");
         return;
       }
 
-      setStatus("", "Pripravene");
+      setStatus("", "Pripravené");
     }
 
     function updateDeviceUi() {
@@ -1640,12 +2999,12 @@
       const suggested = device.label && device.label !== defaultDeviceLabel(device.type)
         ? device.label
         : (device.type === "mobile" ? "Domi" : "Peto");
-      const raw = window.prompt("Nazov zariadenia", suggested);
+      const raw = window.prompt("Názov zariadenia", suggested);
       if (raw === null) return;
 
       const next = raw.trim().slice(0, 24);
       if (!next) {
-        showToast("Nazov ostal bez zmeny.");
+        showToast("Názov ostal bez zmeny.");
         return;
       }
 
@@ -1653,7 +3012,7 @@
       saveDevice();
       updateDeviceUi();
       closeMenu();
-      showToast("Zariadenie nastavene.");
+      showToast("Zariadenie nastavené.");
     }
 
     function renderGroup(container, title, className, items) {
@@ -1713,18 +3072,40 @@
         main.appendChild(meta);
       }
 
+      const actions = document.createElement("div");
+      actions.className = "item-actions";
+
+      const notesButton = document.createElement("button");
+      notesButton.type = "button";
+      notesButton.className = "item-note-button" + (noteCount(item) ? " has-notes" : "");
+      notesButton.setAttribute("aria-label", noteCount(item) ? ("Otvorit poznamky, sprav: " + noteCount(item)) : "Pridat poznamku");
+      notesButton.textContent = "\uD83D\uDCAC";
+      notesButton.addEventListener("click", event => {
+        event.stopPropagation();
+        openNotes(item.id, "shopping");
+      });
+
+      if (noteCount(item)) {
+        const badge = document.createElement("span");
+        badge.className = "item-note-badge";
+        badge.textContent = noteCount(item) > 9 ? "9+" : String(noteCount(item));
+        notesButton.appendChild(badge);
+      }
+
       const del = document.createElement("button");
       del.type = "button";
       del.className = "item-delete";
-      del.textContent = "X";
+      del.textContent = "×";
       del.addEventListener("click", event => {
         event.stopPropagation();
         deleteSingle(item.id);
       });
 
+      actions.appendChild(notesButton);
+      actions.appendChild(del);
       card.appendChild(check);
       card.appendChild(main);
-      card.appendChild(del);
+      card.appendChild(actions);
       return card;
     }
 
@@ -1739,20 +3120,26 @@
         const empty = document.createElement("div");
         empty.className = "empty";
         empty.innerHTML = [
-          '<div class="empty-title">Zoznam je prazdny</div>',
-          '<div>Pridaj prvu polozku a dalej to pojde samo.</div>'
+          '<div class="empty-title">Zoznam je prázdny</div>',
+          '<div>Pridaj prvú položku a ďalej to pôjde samo.</div>'
         ].join("");
         list.appendChild(empty);
         updateBulkActionState();
+        if (state.notesOpen) {
+          renderNotesPanel();
+        }
         return;
       }
 
       const open = items.filter(item => !item.bought);
       const done = items.filter(item => item.bought);
 
-      renderGroup(list, "Kupit", "", open);
-      renderGroup(list, "Kupene", "done", done);
+      renderGroup(list, "Kúpiť", "", open);
+      renderGroup(list, "Kúpené", "done", done);
       updateBulkActionState();
+      if (state.notesOpen) {
+        renderNotesPanel();
+      }
     }
 
     function updateBulkActionState() {
@@ -1777,7 +3164,7 @@
       }
 
       setUnsaved(true);
-      setStatus("saving", "Ukladam...");
+      setStatus("saving", "Ukladám...");
 
       state.syncTimer = setTimeout(() => {
         state.syncTimer = null;
@@ -1810,8 +3197,8 @@
     function addItem(name) {
       const clean = String(name || "").trim();
       if (!clean) {
-        showToast("Napis, co treba kupit.");
-        return;
+        showToast("Napíš, čo treba kúpiť.");
+        return false;
       }
 
       state.items.unshift(stampItem({
@@ -1820,13 +3207,36 @@
         bought: false,
         boughtAt: null,
         deleted: false,
-        order: nextTopOrder()
+        order: nextTopOrder(),
+        notes: []
       }));
 
+      rememberItemName(clean);
       touchLocalRevision();
       persistItems();
       render();
       scheduleAutoSave();
+      haptic(12);
+      state.drafts.shoppingName = "";
+      persistDrafts();
+      return true;
+    }
+
+    function submitShoppingInput(options) {
+      const input = document.getElementById("input-name");
+      if (!input) return;
+
+      const added = addItem(input.value);
+      if (!added) return;
+
+      input.value = "";
+      hideShoppingSuggestions();
+      if (options && options.keepFocus) {
+        focusShoppingInput();
+        return;
+      }
+
+      input.focus();
     }
 
     function toggleBought(id) {
@@ -1841,6 +3251,7 @@
       persistItems();
       render();
       scheduleAutoSave(500);
+      haptic(item.bought ? 18 : 8);
     }
 
     function deleteSingle(id) {
@@ -1851,15 +3262,18 @@
       stampItem(item);
       touchLocalRevision();
       persistItems();
+      if (state.noteItemId === id) {
+        closeNotes();
+      }
       render();
       scheduleAutoSave(500);
-      showToast("Polozka vymazana.");
+      showToast("Položka vymazaná.");
     }
 
     function markAllBought() {
       const items = state.items.filter(item => item && !item.deleted && !item.bought);
       if (!items.length) {
-        showToast("Nie je co oznacit.");
+        showToast("Nie je čo označiť.");
         return;
       }
 
@@ -1875,13 +3289,13 @@
       render();
       scheduleAutoSave(400);
       closeMenu();
-      showToast("Vsetko je oznacene.");
+      showToast("Všetko je označené.");
     }
 
     function clearChecked() {
       const items = state.items.filter(item => item && item.bought && !item.deleted);
       if (!items.length) {
-        showToast("Nie je co vymazat.");
+        showToast("Nie je čo vymazať.");
         return;
       }
 
@@ -1896,7 +3310,7 @@
       render();
       scheduleAutoSave(400);
       closeMenu();
-      showToast("Oznacene polozky vymazane.");
+      showToast("Označené položky vymazané.");
     }
 
     function parseSyncPayload(data) {
@@ -1970,7 +3384,7 @@
 
       const requestRevision = state.localRevision;
       state.syncInProgress = true;
-      setStatus("loading", "Nacitavam...");
+      setStatus("loading", "Načítavam...");
 
       return fetchRemoteData()
         .then(remoteSnapshot => {
@@ -1983,23 +3397,23 @@
             setUnsaved(true);
             scheduleAutoSave(250);
             if (showFeedback) {
-              showToast("Nacitane, tvoje zmeny sa este ukladaju.");
+              showToast("Načítané, tvoje zmeny sa ešte ukladajú.");
             }
             return true;
           }
 
           setUnsaved(false);
-          setStatus("synced", "Aktualne");
+          setStatus("synced", "Aktuálne");
           if (showFeedback) {
-            showToast("Nacitane zo Sheets.");
+            showToast("Načítané zo Sheets.");
           }
           return true;
         })
         .catch(error => {
           console.error(error);
-          setStatus("error", "Nacitavanie zlyhalo");
+          setStatus("error", "Načítavanie zlyhalo");
           if (showFeedback) {
-            showToast("Nacitavanie zlyhalo.");
+            showToast("Načítavanie zlyhalo.");
           }
           return false;
         })
@@ -2019,7 +3433,7 @@
         packing: normalizePacking(state.packing)
       };
       state.syncInProgress = true;
-      setStatus("loading", "Ukladam...");
+      setStatus("loading", "Ukladám...");
 
       return fetchRemoteData()
         .then(remoteSnapshot => {
@@ -2072,15 +3486,15 @@
             setUnsaved(true);
             scheduleAutoSave(250);
             if (showFeedback) {
-              showToast("Ulozene, dalsie zmeny sa este ukladaju.");
+              showToast("Uložené, ďalšie zmeny sa ešte ukladajú.");
             }
             return true;
           }
 
           setUnsaved(false);
-          setStatus("synced", "Aktualne");
+          setStatus("synced", "Aktuálne");
           if (showFeedback) {
-            showToast("Ulozene.");
+            showToast("Uložené.");
           }
           return true;
         })
@@ -2088,7 +3502,7 @@
           console.error(error);
           setStatus("error", "Ukladanie zlyhalo");
           if (showFeedback) {
-            showToast("Ulozenie zlyhalo.");
+            showToast("Uloženie zlyhalo.");
           }
           return false;
         })
@@ -2105,8 +3519,17 @@
     }
 
     function refreshFromForeground(force) {
+      if (force) {
+        state.pendingForegroundRefresh = false;
+      }
+
       const now = Date.now();
       if (!force && now - state.lastForegroundSyncAt < FOREGROUND_SYNC_GAP) {
+        return Promise.resolve(false);
+      }
+
+      if (!force && isTypingProtected()) {
+        queueForegroundRefresh();
         return Promise.resolve(false);
       }
 
@@ -2123,7 +3546,7 @@
 
       if (loading) {
         indicator.classList.add("active");
-        indicator.textContent = "Nacitavam...";
+        indicator.textContent = "Načítavam...";
         return;
       }
 
@@ -2134,7 +3557,7 @@
       }
 
       indicator.classList.add("active");
-      indicator.textContent = distance >= PULL_THRESHOLD ? "Pusti pre obnovenie" : "Potiahni este trochu";
+      indicator.textContent = distance >= PULL_THRESHOLD ? "Pusti pre obnovenie" : "Potiahni ešte trochu";
     }
 
     function bindPullToRefresh() {
@@ -2192,6 +3615,9 @@
     }
 
     function openMenu() {
+      if (state.notesOpen) {
+        closeNotes();
+      }
       if (state.vacationOpen) {
         closeVacation();
       }
@@ -2228,6 +3654,9 @@
     function openVacation() {
       if (state.menuOpen) {
         closeMenu();
+      }
+      if (state.notesOpen) {
+        closeNotes();
       }
 
       const backdrop = document.getElementById("vacation-backdrop");
@@ -2279,18 +3708,73 @@
     }
 
     function bindEvents() {
+      const shoppingInput = document.getElementById("input-name");
+      const notesInput = document.getElementById("notes-input");
+      const vacationSectionInput = document.getElementById("vacation-section-name");
+
+      if (shoppingInput) {
+        shoppingInput.value = state.drafts.shoppingName || "";
+        shoppingInput.addEventListener("input", () => {
+          setDraftValue("shoppingName", shoppingInput.value);
+          renderShoppingSuggestions();
+        });
+        shoppingInput.addEventListener("focus", () => {
+          renderShoppingSuggestions();
+        });
+        shoppingInput.addEventListener("keydown", event => {
+          if (!state.quickAdd || event.key !== "Enter" || event.isComposing) {
+            return;
+          }
+
+          event.preventDefault();
+          submitShoppingInput({ keepFocus: true });
+        });
+        shoppingInput.addEventListener("blur", () => {
+          window.setTimeout(() => {
+            hideShoppingSuggestions();
+            flushDeferredForegroundRefresh();
+          }, 120);
+        });
+      }
+
+      if (vacationSectionInput) {
+        vacationSectionInput.value = state.drafts.vacationSectionName || "";
+        vacationSectionInput.addEventListener("input", () => {
+          setDraftValue("vacationSectionName", vacationSectionInput.value);
+        });
+        vacationSectionInput.addEventListener("blur", () => {
+          window.setTimeout(() => {
+            flushDeferredForegroundRefresh();
+          }, 120);
+        });
+      }
+
+      if (notesInput) {
+        notesInput.addEventListener("input", () => {
+          if (!state.noteItemId) return;
+          setItemNoteDraft(state.noteItemId, notesInput.value);
+        });
+        notesInput.addEventListener("blur", () => {
+          window.setTimeout(() => {
+            flushDeferredForegroundRefresh();
+          }, 120);
+        });
+      }
+
+      updateQuickAddUi();
+
+      document.getElementById("btn-quick-add").addEventListener("click", toggleQuickAdd);
       document.getElementById("add-form").addEventListener("submit", event => {
         event.preventDefault();
-        const input = document.getElementById("input-name");
-        addItem(input.value);
-        input.value = "";
-        input.focus();
+        submitShoppingInput({ keepFocus: state.quickAdd });
       });
 
       document.getElementById("btn-vacation").addEventListener("click", openVacation);
       document.getElementById("btn-menu").addEventListener("click", openMenu);
       document.getElementById("btn-close-menu").addEventListener("click", closeMenu);
+      document.getElementById("btn-close-notes").addEventListener("click", closeNotes);
       document.getElementById("menu-backdrop").addEventListener("click", closeMenu);
+      document.getElementById("notes-backdrop").addEventListener("click", closeNotes);
       document.getElementById("btn-close-vacation").addEventListener("click", closeVacation);
       document.getElementById("vacation-backdrop").addEventListener("click", closeVacation);
       document.getElementById("btn-device").addEventListener("click", promptForDeviceName);
@@ -2298,7 +3782,7 @@
         closeMenu();
         refreshFromForeground(true).then(result => {
           if (result) {
-            showToast("Obnovene.");
+            showToast("Obnovené.");
           }
         });
       });
@@ -2309,6 +3793,16 @@
       document.getElementById("btn-mark-all").addEventListener("click", markAllBought);
       document.getElementById("btn-clear-checked").addEventListener("click", clearChecked);
       document.getElementById("btn-clear-vacation").addEventListener("click", clearVacationBoard);
+      document.getElementById("notes-form").addEventListener("submit", event => {
+        event.preventDefault();
+        if (!state.noteItemId) return;
+
+        const input = document.getElementById("notes-input");
+        const added = addItemNote(state.noteItemId, input ? input.value : "");
+        if (added && input) {
+          input.value = "";
+        }
+      });
       document.getElementById("vacation-section-form").addEventListener("submit", event => {
         event.preventDefault();
         const input = document.getElementById("vacation-section-name");
@@ -2321,8 +3815,13 @@
 
       document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
+          if (state.notesOpen) {
+            closeNotes();
+            return;
+          }
           if (state.menuOpen) {
             closeMenu();
+            return;
           }
           if (state.vacationOpen) {
             closeVacation();
@@ -2333,6 +3832,8 @@
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           refreshFromForeground(false);
+        } else {
+          markTyping();
         }
       });
 
@@ -2348,6 +3849,7 @@
     function boot() {
       state.items = loadLocalItems();
       state.packing = loadLocalPacking();
+      seedItemHistory(state.items);
 
       updateDeviceUi();
       render();
@@ -2362,6 +3864,8 @@
       } else {
         loadFromSheets(false);
       }
+
+      flushDeferredForegroundRefresh();
     }
 
     if (document.readyState === "loading") {

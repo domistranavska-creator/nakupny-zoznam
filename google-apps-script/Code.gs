@@ -2,17 +2,22 @@ const SPREADSHEET_ID = '158NnJJFeeZUxeB9D8tn001wPYMvmGNVNss4nQ_BGMYk';
 const SHEET_NAME = 'NakupnyZoznam';
 const TOMBSTONE_SHEET_NAME = 'NakupnyZoznam_deleted';
 const PACKING_SHEET_NAME = 'BalimeDovolenku';
+const IMPORTANT_SECTION_ID = '__important__';
 
 function doGet(e) {
   const action = getAction_(e);
   if (action === 'get' || action === 'load' || action === 'sync') {
-    return jsonOutput_(buildSyncPayload_());
+    return withScriptLock_(function () {
+      return jsonOutput_(buildSyncPayload_());
+    });
   }
 
-  return jsonOutput_(Object.assign({
-    ok: true,
-    message: 'Shopping list sync is running.'
-  }, buildSyncPayload_()));
+  return withScriptLock_(function () {
+    return jsonOutput_(Object.assign({
+      ok: true,
+      message: 'Shopping list sync is running.'
+    }, buildSyncPayload_()));
+  });
 }
 
 function doPost(e) {
@@ -20,21 +25,28 @@ function doPost(e) {
   const action = payload.action || getAction_(e);
 
   if (action === 'get' || action === 'load') {
-    return jsonOutput_(buildSyncPayload_());
+    return withScriptLock_(function () {
+      return jsonOutput_(buildSyncPayload_());
+    });
   }
 
   if (action === 'sync') {
-    const nextItems = hasOwn_(payload, 'items')
-      ? normalizeItems_(payload.items)
-      : readAllItems_();
-    const nextPacking = hasOwn_(payload, 'packing')
-      ? normalizePacking_(payload.packing)
-      : readPacking_();
+    return withScriptLock_(function () {
+      const currentItems = readAllItems_();
+      const nextItems = hasOwn_(payload, 'items')
+        ? normalizeItems_(currentItems.concat(Array.isArray(payload.items) ? payload.items : []))
+        : currentItems;
 
-    writeAllItems_(nextItems);
-    writePacking_(nextPacking);
+      const currentPacking = readPacking_();
+      const nextPacking = hasOwn_(payload, 'packing')
+        ? mergePacking_(currentPacking, payload.packing)
+        : currentPacking;
 
-    return jsonOutput_(buildSyncPayload_());
+      writeAllItems_(nextItems);
+      writePacking_(nextPacking);
+
+      return jsonOutput_(buildSyncPayload_());
+    });
   }
 
   return jsonOutput_({
@@ -42,6 +54,17 @@ function doPost(e) {
     error: 'Unsupported action',
     supportedActions: ['get', 'load', 'sync']
   });
+}
+
+function withScriptLock_(callback) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+
+  try {
+    return callback();
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function buildSyncPayload_() {
@@ -100,7 +123,7 @@ function getSheet_(name, hidden) {
 }
 
 function ensureShoppingHeader_(sheet) {
-  const header = ['id', 'name', 'qty', 'bought', 'boughtAt', 'updatedAt', 'order', 'deleted', 'updatedById', 'updatedByType', 'updatedByLabel'];
+  const header = ['id', 'name', 'qty', 'bought', 'boughtAt', 'updatedAt', 'order', 'deleted', 'updatedById', 'updatedByType', 'updatedByLabel', 'notesJson'];
   const current = sheet.getRange(1, 1, 1, header.length).getValues()[0];
   const needsHeader = header.some(function (value, index) {
     return current[index] !== value;
@@ -112,7 +135,7 @@ function ensureShoppingHeader_(sheet) {
 }
 
 function ensurePackingHeader_(sheet) {
-  const header = ['kind', 'id', 'sectionId', 'name', 'packed', 'packedAt', 'updatedAt', 'order', 'deleted', 'updatedById', 'updatedByType', 'updatedByLabel'];
+  const header = ['kind', 'id', 'sectionId', 'name', 'packed', 'packedAt', 'updatedAt', 'order', 'deleted', 'updatedById', 'updatedByType', 'updatedByLabel', 'notesJson'];
   const current = sheet.getRange(1, 1, 1, header.length).getValues()[0];
   const needsHeader = header.some(function (value, index) {
     return current[index] !== value;
@@ -141,7 +164,7 @@ function readSheetItems_(sheet) {
     return [];
   }
 
-  const values = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  const values = sheet.getRange(2, 1, lastRow - 1, 12).getValues();
   return values
     .filter(function (row) {
       return row[1];
@@ -158,7 +181,8 @@ function readSheetItems_(sheet) {
         deleted: row[7] === true || String(row[7]).toLowerCase() === 'true',
         updatedById: String(row[8] || ''),
         updatedByType: String(row[9] || ''),
-        updatedByLabel: String(row[10] || '')
+        updatedByLabel: String(row[10] || ''),
+        notes: parseNotesJson_(row[11])
       };
     });
 }
@@ -176,7 +200,8 @@ function writeSheetItems_(sheet, items) {
       item.deleted === true,
       item.updatedById || '',
       item.updatedByType || '',
-      item.updatedByLabel || ''
+      item.updatedByLabel || '',
+      JSON.stringify(normalizeNotes_(item.notes))
     ];
   });
 
@@ -184,7 +209,7 @@ function writeSheetItems_(sheet, items) {
   ensureShoppingHeader_(sheet);
 
   if (rows.length) {
-    sheet.getRange(2, 1, rows.length, 11).setValues(rows);
+    sheet.getRange(2, 1, rows.length, 12).setValues(rows);
   }
 }
 
@@ -229,7 +254,8 @@ function normalizeItems_(items) {
         deleted: item.deleted === true,
         updatedById: item.updatedById ? String(item.updatedById) : '',
         updatedByType: item.updatedByType ? String(item.updatedByType) : '',
-        updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ''
+        updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : '',
+        notes: normalizeNotes_(item.notes)
       };
 
       const existing = merged.get(normalized.id);
@@ -238,12 +264,83 @@ function normalizeItems_(items) {
         return;
       }
 
-      if (timestampMs_(normalized.updatedAt) >= timestampMs_(existing.updatedAt)) {
+      merged.set(normalized.id, Object.assign(
+        {},
+        timestampMs_(normalized.updatedAt) >= timestampMs_(existing.updatedAt) ? normalized : existing,
+        { notes: mergeNotes_(existing.notes, normalized.notes) }
+      ));
+    });
+
+  return Array.from(merged.values()).sort(sortByOrderThenUpdatedDesc_);
+}
+
+function parseNotesJson_(value) {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return normalizeNotes_(value);
+  }
+
+  try {
+    return normalizeNotes_(JSON.parse(String(value)));
+  } catch (error) {
+    return [];
+  }
+}
+
+function normalizeNotes_(notes) {
+  if (!Array.isArray(notes)) {
+    return [];
+  }
+
+  const merged = new Map();
+  notes
+    .filter(function (note) {
+      return note && typeof note.text === 'string' && note.text.trim();
+    })
+    .forEach(function (note) {
+      const normalized = {
+        id: note.id ? String(note.id) : Utilities.getUuid(),
+        text: String(note.text || '').trim().slice(0, 240),
+        createdAt: note.createdAt ? String(note.createdAt) : (note.updatedAt ? String(note.updatedAt) : new Date().toISOString()),
+        updatedAt: note.updatedAt ? String(note.updatedAt) : (note.createdAt ? String(note.createdAt) : new Date().toISOString()),
+        authorId: note.authorId ? String(note.authorId) : '',
+        authorType: note.authorType ? String(note.authorType) : '',
+        authorLabel: note.authorLabel ? String(note.authorLabel) : ''
+      };
+
+      const existing = merged.get(normalized.id);
+      if (!existing || timestampMs_(normalized.updatedAt) >= timestampMs_(existing.updatedAt)) {
         merged.set(normalized.id, normalized);
       }
     });
 
-  return Array.from(merged.values()).sort(sortByOrderThenUpdatedDesc_);
+  return Array.from(merged.values()).sort(function (a, b) {
+    const createdDelta = timestampMs_(a.createdAt) - timestampMs_(b.createdAt);
+    if (createdDelta !== 0) {
+      return createdDelta;
+    }
+
+    return timestampMs_(a.updatedAt) - timestampMs_(b.updatedAt);
+  });
+}
+
+function mergeNotes_(left, right) {
+  return normalizeNotes_([]
+    .concat(Array.isArray(left) ? left : [])
+    .concat(Array.isArray(right) ? right : []));
+}
+
+function mergePacking_(left, right) {
+  const current = normalizePacking_(left);
+  const incoming = normalizePacking_(right);
+
+  return normalizePacking_({
+    sections: current.sections.concat(incoming.sections),
+    items: current.items.concat(incoming.items)
+  });
 }
 
 function readPacking_() {
@@ -253,7 +350,7 @@ function readPacking_() {
     return { sections: [], items: [] };
   }
 
-  const values = sheet.getRange(2, 1, lastRow - 1, 12).getValues();
+  const values = sheet.getRange(2, 1, lastRow - 1, 13).getValues();
   const sections = [];
   const items = [];
 
@@ -268,7 +365,8 @@ function readPacking_() {
         updatedAt: row[6] ? new Date(row[6]).toISOString() : '1970-01-01T00:00:00.000Z',
         updatedById: String(row[9] || ''),
         updatedByType: String(row[10] || ''),
-        updatedByLabel: String(row[11] || '')
+        updatedByLabel: String(row[11] || ''),
+        notes: parseNotesJson_(row[12])
       });
       return;
     }
@@ -285,7 +383,8 @@ function readPacking_() {
         deleted: row[8] === true || String(row[8]).toLowerCase() === 'true',
         updatedById: String(row[9] || ''),
         updatedByType: String(row[10] || ''),
-        updatedByLabel: String(row[11] || '')
+        updatedByLabel: String(row[11] || ''),
+        notes: parseNotesJson_(row[12])
       });
     }
   });
@@ -312,7 +411,8 @@ function writePacking_(packing) {
       section.deleted === true,
       section.updatedById || '',
       section.updatedByType || '',
-      section.updatedByLabel || ''
+      section.updatedByLabel || '',
+      ''
     ];
   }).concat(normalized.items.map(function (item) {
     return [
@@ -327,7 +427,8 @@ function writePacking_(packing) {
       item.deleted === true,
       item.updatedById || '',
       item.updatedByType || '',
-      item.updatedByLabel || ''
+      item.updatedByLabel || '',
+      JSON.stringify(normalizeNotes_(item.notes))
     ];
   }));
 
@@ -335,7 +436,7 @@ function writePacking_(packing) {
   ensurePackingHeader_(sheet);
 
   if (rows.length) {
-    sheet.getRange(2, 1, rows.length, 12).setValues(rows);
+    sheet.getRange(2, 1, rows.length, 13).setValues(rows);
   }
 }
 
@@ -388,7 +489,8 @@ function normalizePacking_(packing) {
         updatedAt: item.updatedAt ? String(item.updatedAt) : '1970-01-01T00:00:00.000Z',
         updatedById: item.updatedById ? String(item.updatedById) : '',
         updatedByType: item.updatedByType ? String(item.updatedByType) : '',
-        updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : ''
+        updatedByLabel: item.updatedByLabel ? String(item.updatedByLabel) : '',
+        notes: normalizeNotes_(item.notes)
       };
 
       if (!normalized.sectionId) {
@@ -396,14 +498,22 @@ function normalizePacking_(packing) {
       }
 
       const existing = mergedItems.get(normalized.id);
-      if (!existing || timestampMs_(normalized.updatedAt) >= timestampMs_(existing.updatedAt)) {
+      if (!existing) {
         mergedItems.set(normalized.id, normalized);
+        return;
       }
+
+      const preferred = timestampMs_(normalized.updatedAt) >= timestampMs_(existing.updatedAt)
+        ? normalized
+        : existing;
+      mergedItems.set(normalized.id, Object.assign({}, preferred, {
+        notes: mergeNotes_(existing.notes, normalized.notes)
+      }));
     });
 
   const items = Array.from(mergedItems.values())
     .filter(function (item) {
-      return item.deleted === true || knownSectionIds.has(item.sectionId);
+      return item.deleted === true || item.sectionId === IMPORTANT_SECTION_ID || knownSectionIds.has(item.sectionId);
     })
     .sort(sortByOrderThenUpdatedDesc_);
 
