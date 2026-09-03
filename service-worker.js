@@ -1,7 +1,9 @@
-const CACHE_NAME = "nakupny-zoznam-runtime-v2026-07-23-created-meta";
+const CACHE_NAME = "spolu-runtime-v2026-09-03-section-sync-v8";
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",
+  "./styles.css",
+  "./app.js",
   "./manifest.json",
   "./icons/icon_android_mdpi_48.png",
   "./icons/icon_android_hdpi_72.png",

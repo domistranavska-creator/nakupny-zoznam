@@ -1,11 +1,11 @@
 {
-  "name": "N\u00e1kupn\u00fd zoznam",
-  "short_name": "Zoznam",
+  "name": "Spolu - kalend\u00e1r a zoznamy",
+  "short_name": "Spolu",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#083344",
+  "background_color": "#f7fbf8",
+  "theme_color": "#141f3a",
   "icons": [
     {
       "src": "icons/icon_android_xxxhdpi_192.png",
