@@ -193,8 +193,22 @@
         <i aria-hidden="true"></i>
       </label>
       <div class="time-fields" id="event-time-fields">
-        <label class="field"><span>Od</span><select id="event-start" aria-label="Čas začiatku"></select></label>
-        <label class="field"><span>Do</span><select id="event-end" aria-label="Čas konca"></select></label>
+        <label class="field">
+          <span>Od</span>
+          <span class="simple-time">
+            <select id="event-start-hour" aria-label="Hodina začiatku"></select>
+            <b aria-hidden="true">:</b>
+            <select id="event-start-minute" aria-label="Minúta začiatku"></select>
+          </span>
+        </label>
+        <label class="field">
+          <span>Do</span>
+          <span class="simple-time">
+            <select id="event-end-hour" aria-label="Hodina konca"></select>
+            <b aria-hidden="true">:</b>
+            <select id="event-end-minute" aria-label="Minúta konca"></select>
+          </span>
+        </label>
       </div>
       <label class="field wide">
         <span>Poznámka <small>nepovinné</small></span>

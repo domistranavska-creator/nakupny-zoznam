@@ -1105,28 +1105,44 @@ function renderUpcoming() {
 }
 
 function populateTimeSelects() {
-  [$("#event-start"), $("#event-end")].forEach(select => {
+  [$("#event-start-hour"), $("#event-end-hour")].forEach(select => {
     select.innerHTML = "";
-    for (let minutes = 0; minutes < 24 * 60; minutes += 15) {
-      const value = String(Math.floor(minutes / 60)).padStart(2, "0") + ":" +
-        String(minutes % 60).padStart(2, "0");
+    for (let hour = 0; hour < 24; hour += 1) {
+      const value = String(hour).padStart(2, "0");
       const option = document.createElement("option");
       option.value = value;
       option.textContent = value;
       select.appendChild(option);
     }
   });
+  [$("#event-start-minute"), $("#event-end-minute")].forEach(select => {
+    select.innerHTML = "";
+    ["00", "30"].forEach(value => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
+    });
+  });
 }
 
-function setTimeSelectValue(select, value, fallback) {
+function setTimeSelectValue(prefix, value, fallback) {
   const clean = /^([01]\d|2[0-3]):[0-5]\d$/.test(value || "") ? value : fallback;
-  if (!Array.from(select.options).some(option => option.value === clean)) {
+  const [hour, minute] = clean.split(":");
+  const hourSelect = $("#" + prefix + "-hour");
+  const minuteSelect = $("#" + prefix + "-minute");
+  if (!Array.from(minuteSelect.options).some(option => option.value === minute)) {
     const option = document.createElement("option");
-    option.value = clean;
-    option.textContent = clean;
-    select.appendChild(option);
+    option.value = minute;
+    option.textContent = minute;
+    minuteSelect.appendChild(option);
   }
-  select.value = clean;
+  hourSelect.value = hour;
+  minuteSelect.value = minute;
+}
+
+function readTimeSelectValue(prefix) {
+  return $("#" + prefix + "-hour").value + ":" + $("#" + prefix + "-minute").value;
 }
 
 function openEventSheet(item, dateOverride) {
@@ -1136,8 +1152,8 @@ function openEventSheet(item, dateOverride) {
   $("#event-title").value = editing ? item.title : "";
   $("#event-date").value = editing ? item.date : (dateOverride || state.selectedDate);
   $("#event-all-day").checked = editing ? item.allDay : false;
-  setTimeSelectValue($("#event-start"), editing ? item.startTime : "09:00", "09:00");
-  setTimeSelectValue($("#event-end"), editing ? item.endTime : "10:00", "10:00");
+  setTimeSelectValue("event-start", editing ? item.startTime : "09:00", "09:00");
+  setTimeSelectValue("event-end", editing ? item.endTime : "10:00", "10:00");
   $("#event-note").value = editing ? item.note : "";
   const color = editing ? item.color : "aqua";
   const radio = document.querySelector('input[name="event-color"][value="' + color + '"]');
@@ -1165,8 +1181,8 @@ function saveEventFromForm() {
     date,
     endDate: date,
     allDay: $("#event-all-day").checked,
-    startTime: $("#event-all-day").checked ? "" : $("#event-start").value,
-    endTime: $("#event-all-day").checked ? "" : $("#event-end").value,
+    startTime: $("#event-all-day").checked ? "" : readTimeSelectValue("event-start"),
+    endTime: $("#event-all-day").checked ? "" : readTimeSelectValue("event-end"),
     note: $("#event-note").value.trim(),
     color: colorInput ? colorInput.value : "aqua",
     assignedTo: assigneeInput && VALID_ASSIGNEES.has(assigneeInput.value) ? assigneeInput.value : "both",

@@ -1391,6 +1391,25 @@ svg {
   resize: none;
 }
 
+.simple-time {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.simple-time select {
+  min-width: 0;
+  padding-right: 8px;
+  padding-left: 10px;
+  text-align: center;
+}
+
+.simple-time b {
+  color: var(--ink);
+  font-size: 1.25rem;
+}
+
 .switch-field {
   display: flex;
   align-items: flex-end;
