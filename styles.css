@@ -1374,7 +1374,8 @@ svg {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   min-height: 50px;
   padding: 12px 14px;
@@ -1383,6 +1384,11 @@ svg {
   background: white;
   color: var(--ink);
   resize: vertical;
+}
+
+.field select {
+  cursor: pointer;
+  resize: none;
 }
 
 .switch-field {

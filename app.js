@@ -740,6 +740,15 @@ function activateShoppingDrag() {
   drag.active = true;
   drag.ghost = ghost;
   drag.offsetY = drag.startY - rect.top;
+  drag.rowHeight = rect.height;
+  drag.rows = Array.from(document.querySelectorAll(
+    '#shopping-list .item-row[data-bought="' + drag.row.dataset.bought + '"]'
+  ));
+  drag.slotCenters = drag.rows.map(row => {
+    const rowRect = row.getBoundingClientRect();
+    return rowRect.top + rowRect.height / 2 + window.scrollY;
+  });
+  drag.currentIndex = drag.rows.indexOf(drag.row);
   drag.row.classList.add("drag-placeholder");
   document.body.classList.add("item-dragging");
   haptic(28);
@@ -775,12 +784,26 @@ function moveShoppingDrag(clientX, clientY) {
   }
 
   drag.ghost.style.top = (clientY - drag.offsetY) + "px";
-  const target = document.elementFromPoint(clientX, clientY);
-  const targetRow = target && target.closest ? target.closest(".item-row") : null;
-  if (targetRow && targetRow !== drag.row && targetRow.dataset.bought === drag.row.dataset.bought) {
-    const rect = targetRow.getBoundingClientRect();
-    const after = clientY > rect.top + rect.height / 2;
-    targetRow.parentNode.insertBefore(drag.row, after ? targetRow.nextSibling : targetRow);
+  if (drag.rows.length > 1) {
+    const draggedCenter = clientY - drag.offsetY + drag.rowHeight / 2 + window.scrollY;
+    let targetIndex = 0;
+    let shortestDistance = Infinity;
+    drag.slotCenters.forEach((center, index) => {
+      const distance = Math.abs(draggedCenter - center);
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        targetIndex = index;
+      }
+    });
+
+    if (targetIndex !== drag.currentIndex) {
+      const ordered = drag.rows.filter(row => row !== drag.row);
+      ordered.splice(targetIndex, 0, drag.row);
+      const next = ordered[targetIndex + 1];
+      if (next) drag.row.parentNode.insertBefore(drag.row, next);
+      else ordered[targetIndex - 1].after(drag.row);
+      drag.currentIndex = targetIndex;
+    }
   }
 
   const edge = 82;
@@ -793,7 +816,7 @@ function saveShoppingOrderFromDom() {
   const timestamp = nowIso();
   let changed = false;
   ["0", "1"].forEach(status => {
-    const rows = Array.from(document.querySelectorAll('.item-row[data-bought="' + status + '"]'));
+    const rows = Array.from(document.querySelectorAll('#shopping-list .item-row[data-bought="' + status + '"]'));
     rows.forEach((row, index) => {
       const item = state.shopping.find(record => record.id === row.dataset.id && !record.deleted);
       if (item && item.order !== index) {
@@ -1081,6 +1104,31 @@ function renderUpcoming() {
   });
 }
 
+function populateTimeSelects() {
+  [$("#event-start"), $("#event-end")].forEach(select => {
+    select.innerHTML = "";
+    for (let minutes = 0; minutes < 24 * 60; minutes += 15) {
+      const value = String(Math.floor(minutes / 60)).padStart(2, "0") + ":" +
+        String(minutes % 60).padStart(2, "0");
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
+    }
+  });
+}
+
+function setTimeSelectValue(select, value, fallback) {
+  const clean = /^([01]\d|2[0-3]):[0-5]\d$/.test(value || "") ? value : fallback;
+  if (!Array.from(select.options).some(option => option.value === clean)) {
+    const option = document.createElement("option");
+    option.value = clean;
+    option.textContent = clean;
+    select.appendChild(option);
+  }
+  select.value = clean;
+}
+
 function openEventSheet(item, dateOverride) {
   const editing = Boolean(item);
   $("#event-sheet-title").textContent = editing ? "Upraviť udalosť" : "Nová udalosť";
@@ -1088,8 +1136,8 @@ function openEventSheet(item, dateOverride) {
   $("#event-title").value = editing ? item.title : "";
   $("#event-date").value = editing ? item.date : (dateOverride || state.selectedDate);
   $("#event-all-day").checked = editing ? item.allDay : false;
-  $("#event-start").value = editing ? item.startTime : "09:00";
-  $("#event-end").value = editing ? item.endTime : "10:00";
+  setTimeSelectValue($("#event-start"), editing ? item.startTime : "09:00", "09:00");
+  setTimeSelectValue($("#event-end"), editing ? item.endTime : "10:00", "10:00");
   $("#event-note").value = editing ? item.note : "";
   const color = editing ? item.color : "aqua";
   const radio = document.querySelector('input[name="event-color"][value="' + color + '"]');
@@ -1548,6 +1596,7 @@ function boot() {
   state.events = normalizeEvents(loadJson(STORAGE.events, []));
   state.tasks = normalizeTasks(loadJson(STORAGE.tasks, []));
   persistAll();
+  populateTimeSelects();
   bindEvents();
   bindPullToRefresh();
   switchView(state.activeView);

@@ -150,22 +150,22 @@
         <button type="button" class="danger-text" id="clear-tasks">Vymazať hotové</button>
       </div>
     </section>
-
-    <nav class="bottom-nav" aria-label="Hlavná navigácia">
-      <button class="nav-item active" type="button" data-target="shopping">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20.3 8H6.1M9 20h.01M17 20h.01"/></svg>
-        <span>Nákup</span>
-      </button>
-      <button class="nav-item" type="button" data-target="calendar">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
-        <span>Kalendár</span>
-      </button>
-      <button class="nav-item" type="button" data-target="tasks">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 2 2 4-4M12 7h8M4 14l2 2 4-4M12 14h8M4 21l2 2 4-4M12 21h8"/></svg>
-        <span>Úlohy</span>
-      </button>
-    </nav>
   </main>
+
+  <nav class="bottom-nav" aria-label="Hlavná navigácia">
+    <button class="nav-item active" type="button" data-target="shopping">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20.3 8H6.1M9 20h.01M17 20h.01"/></svg>
+      <span>Nákup</span>
+    </button>
+    <button class="nav-item" type="button" data-target="calendar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+      <span>Kalendár</span>
+    </button>
+    <button class="nav-item" type="button" data-target="tasks">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 2 2 4-4M12 7h8M4 14l2 2 4-4M12 14h8M4 21l2 2 4-4M12 21h8"/></svg>
+      <span>Úlohy</span>
+    </button>
+  </nav>
 
   <div class="modal-backdrop" id="event-backdrop" hidden></div>
   <aside class="bottom-sheet" id="event-sheet" aria-hidden="true">
@@ -193,8 +193,8 @@
         <i aria-hidden="true"></i>
       </label>
       <div class="time-fields" id="event-time-fields">
-        <label class="field"><span>Od</span><input id="event-start" type="time"></label>
-        <label class="field"><span>Do</span><input id="event-end" type="time"></label>
+        <label class="field"><span>Od</span><select id="event-start" aria-label="Čas začiatku"></select></label>
+        <label class="field"><span>Do</span><select id="event-end" aria-label="Čas konca"></select></label>
       </div>
       <label class="field wide">
         <span>Poznámka <small>nepovinné</small></span>
