@@ -17,6 +17,7 @@ const PULL_THRESHOLD = 84;
 const VALID_COLORS = new Set(["aqua", "coral", "sun", "leaf", "blue"]);
 const VALID_PRIORITIES = new Set(["low", "normal", "high"]);
 const VALID_ASSIGNEES = new Set(["both", "domi", "peto"]);
+const VALID_RECURRENCES = new Set(["none", "daily", "weekly", "monthly", "yearly"]);
 
 const state = {
   shopping: [],
@@ -210,6 +211,7 @@ function normalizeEvents(records) {
       note: String(record.note || "").trim().slice(0, 300),
       color: VALID_COLORS.has(record.color) ? record.color : "aqua",
       assignedTo: VALID_ASSIGNEES.has(record.assignedTo) ? record.assignedTo : "both",
+      recurrence: VALID_RECURRENCES.has(record.recurrence) ? record.recurrence : "none",
       deleted: record.deleted === true,
       updatedAt: String(record.updatedAt || "1970-01-01T00:00:00.000Z"),
       updatedById: String(record.updatedById || ""),
@@ -919,8 +921,42 @@ function renderShopping() {
   }
 }
 
+function eventOccursOn(event, value) {
+  if (event.date > value) return false;
+  if (event.recurrence === "none") return (event.endDate || event.date) >= value;
+  const start = parseDateKey(event.date);
+  const current = parseDateKey(value);
+  if (event.recurrence === "daily") return true;
+  if (event.recurrence === "weekly") {
+    const startDay = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()) / 86400000;
+    const currentDay = Date.UTC(current.getFullYear(), current.getMonth(), current.getDate()) / 86400000;
+    return (currentDay - startDay) % 7 === 0;
+  }
+  if (event.recurrence === "monthly") return current.getDate() === start.getDate();
+  return current.getMonth() === start.getMonth() && current.getDate() === start.getDate();
+}
+
 function eventsOnDate(value) {
-  return visibleEvents().filter(event => event.date <= value && (event.endDate || event.date) >= value);
+  return visibleEvents().filter(event => eventOccursOn(event, value));
+}
+
+function recurrenceLabel(value) {
+  return {
+    daily: "Denne",
+    weekly: "Týždenne",
+    monthly: "Mesačne",
+    yearly: "Ročne"
+  }[value] || "";
+}
+
+function nextOccurrenceDate(event, afterDate) {
+  if (event.recurrence === "none") return event.date > afterDate ? event.date : "";
+  const start = parseDateKey(afterDate);
+  for (let offset = 1; offset <= 366; offset += 1) {
+    const candidate = dateKey(addDays(start, offset));
+    if (eventOccursOn(event, candidate)) return candidate;
+  }
+  return "";
 }
 
 function renderCalendar() {
@@ -985,6 +1021,14 @@ function renderAgendaRow(item) {
   title.className = "event-title";
   title.textContent = item.title;
   titleLine.appendChild(title);
+  if (item.recurrence !== "none") {
+    const repeat = document.createElement("span");
+    repeat.className = "repeat-badge";
+    repeat.textContent = "↻";
+    repeat.title = recurrenceLabel(item.recurrence);
+    repeat.setAttribute("aria-label", recurrenceLabel(item.recurrence));
+    titleLine.appendChild(repeat);
+  }
   const assignee = makeAssigneeBadge(item);
   if (assignee) titleLine.appendChild(assignee);
   copy.appendChild(titleLine);
@@ -1051,16 +1095,17 @@ function renderUpcoming() {
   if (!list) return;
   list.innerHTML = "";
   const today = dateKey(new Date());
-  const records = visibleEvents()
-    .filter(item => item.date > today)
+  const upcoming = visibleEvents()
+    .map(item => ({ item, occurrenceDate: nextOccurrenceDate(item, today) }))
+    .filter(occurrence => occurrence.occurrenceDate)
     .sort((a, b) => {
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
-      return (a.startTime || "99:99").localeCompare(b.startTime || "99:99");
-    })
-    .slice(0, 14);
+      if (a.occurrenceDate !== b.occurrenceDate) return a.occurrenceDate.localeCompare(b.occurrenceDate);
+      if (a.item.allDay !== b.item.allDay) return a.item.allDay ? -1 : 1;
+      return (a.item.startTime || "99:99").localeCompare(b.item.startTime || "99:99");
+    });
+  const records = upcoming.slice(0, 14);
   const count = $("#upcoming-count");
-  count.textContent = records.length === 1 ? "1 udalosť" : records.length + " udalostí";
+  count.textContent = upcoming.length === 1 ? "1 udalosť" : upcoming.length + " udalostí";
   if (!records.length) {
     const empty = document.createElement("div");
     empty.className = "upcoming-empty";
@@ -1068,12 +1113,13 @@ function renderUpcoming() {
     list.appendChild(empty);
     return;
   }
-  records.forEach(item => {
+  records.forEach(occurrence => {
+    const item = occurrence.item;
     const row = document.createElement("button");
     row.type = "button";
     row.className = "upcoming-item";
     row.dataset.color = item.color;
-    const date = parseDateKey(item.date);
+    const date = parseDateKey(occurrence.occurrenceDate);
     const badge = document.createElement("span");
     badge.className = "upcoming-date";
     badge.textContent = String(date.getDate());
@@ -1093,7 +1139,11 @@ function renderUpcoming() {
     const meta = document.createElement("span");
     meta.className = "upcoming-meta";
     const time = item.allDay ? "Celý deň" : (item.startTime || "Bez času");
-    meta.textContent = [date.toLocaleDateString("sk-SK", { weekday: "long" }), time].join(" · ");
+    meta.textContent = [
+      date.toLocaleDateString("sk-SK", { weekday: "long" }),
+      time,
+      recurrenceLabel(item.recurrence)
+    ].filter(Boolean).join(" · ");
     copy.append(titleLine, meta);
     const chevron = document.createElement("span");
     chevron.className = "upcoming-chevron";
@@ -1117,7 +1167,7 @@ function populateTimeSelects() {
   });
   [$("#event-start-minute"), $("#event-end-minute")].forEach(select => {
     select.innerHTML = "";
-    ["00", "30"].forEach(value => {
+    Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, "0")).forEach(value => {
       const option = document.createElement("option");
       option.value = value;
       option.textContent = value;
@@ -1151,10 +1201,11 @@ function openEventSheet(item, dateOverride) {
   $("#event-id").value = editing ? item.id : "";
   $("#event-title").value = editing ? item.title : "";
   $("#event-date").value = editing ? item.date : (dateOverride || state.selectedDate);
-  $("#event-all-day").checked = editing ? item.allDay : false;
+  $("#event-all-day").checked = editing ? item.allDay : true;
   setTimeSelectValue("event-start", editing ? item.startTime : "09:00", "09:00");
   setTimeSelectValue("event-end", editing ? item.endTime : "10:00", "10:00");
   $("#event-note").value = editing ? item.note : "";
+  $("#event-recurrence").value = editing && VALID_RECURRENCES.has(item.recurrence) ? item.recurrence : "none";
   const color = editing ? item.color : "aqua";
   const radio = document.querySelector('input[name="event-color"][value="' + color + '"]');
   if (radio) radio.checked = true;
@@ -1186,6 +1237,7 @@ function saveEventFromForm() {
     note: $("#event-note").value.trim(),
     color: colorInput ? colorInput.value : "aqua",
     assignedTo: assigneeInput && VALID_ASSIGNEES.has(assigneeInput.value) ? assigneeInput.value : "both",
+    recurrence: VALID_RECURRENCES.has($("#event-recurrence").value) ? $("#event-recurrence").value : "none",
     deleted: false
   };
   if (existing) {

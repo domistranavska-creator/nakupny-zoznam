@@ -974,6 +974,19 @@ svg {
   min-width: 0;
 }
 
+.repeat-badge {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(42, 185, 197, 0.13);
+  color: var(--mint-deep);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .event-title {
   min-width: 0;
   overflow: hidden;
@@ -1402,6 +1415,9 @@ svg {
   min-width: 0;
   padding-right: 8px;
   padding-left: 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
   text-align: center;
 }
 
