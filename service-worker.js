@@ -1,4 +1,4 @@
-const CACHE_NAME = "spolu-runtime-v2026-09-03-compact-recurring-v19";
+const CACHE_NAME = "spolu-runtime-v2026-09-04-no-event-icons-v22";
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",

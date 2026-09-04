@@ -6,13 +6,16 @@ const STORAGE = {
   tasks: "spolu_tasks_v1",
   device: "nakupny_zoznam_device_v2",
   unsaved: "nakupny_zoznam_unsaved_v2",
+  dirtyScopes: "spolu_dirty_scopes_v1",
   history: "nakupnyZoznam_item_history_v1",
   activeView: "spolu_active_view_v1"
 };
 
 const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbw260UlklkZ4KEtiTvfHtvRr_z3R1Te5Ne3Foch9e38nBuWaeo1Y9eRY7dLKqONmyquFg/exec";
 const AUTO_SAVE_DELAY = 850;
-const FOREGROUND_SYNC_GAP = 12000;
+const LIVE_SYNC_INTERVAL = 4000;
+const IDLE_SYNC_INTERVAL = 15000;
+const ACTIVE_SYNC_WINDOW = 120000;
 const PULL_THRESHOLD = 84;
 const VALID_COLORS = new Set(["aqua", "coral", "sun", "leaf", "blue"]);
 const VALID_PRIORITIES = new Set(["low", "normal", "high"]);
@@ -28,12 +31,16 @@ const state = {
   calendarCursor: startOfMonth(new Date()),
   history: loadJson(STORAGE.history, {}),
   unsaved: localStorage.getItem(STORAGE.unsaved) === "1",
+  dirtyScopes: new Set(loadJson(STORAGE.dirtyScopes, [])),
   revision: 0,
   syncing: false,
   syncQueued: false,
   backendLimited: false,
   connectionError: false,
   syncTimer: null,
+  liveSyncTimer: null,
+  pollFailures: 0,
+  lastInteractionAt: Date.now(),
   lastSyncAt: 0,
   toastTimer: null,
   pull: null,
@@ -285,6 +292,11 @@ function setUnsaved(value) {
   else localStorage.removeItem(STORAGE.unsaved);
 }
 
+function persistDirtyScopes() {
+  if (state.dirtyScopes.size) saveJson(STORAGE.dirtyScopes, Array.from(state.dirtyScopes));
+  else localStorage.removeItem(STORAGE.dirtyScopes);
+}
+
 function haptic(duration) {
   if (navigator.vibrate) navigator.vibrate(duration || 10);
 }
@@ -308,10 +320,6 @@ function setStatus(kind, text) {
   label.textContent = text;
 }
 
-function hasUnsupportedLocalData() {
-  return state.events.length > 0 || state.tasks.length > 0;
-}
-
 function setIdleStatus() {
   if (state.connectionError) {
     setStatus("error", "Offline");
@@ -324,10 +332,12 @@ function setIdleStatus() {
   setStatus("ok", "Aktuálne");
 }
 
-function markDirty(delay) {
+function markDirty(delay, scope) {
   state.revision += 1;
+  state.lastInteractionAt = Date.now();
+  if (scope) state.dirtyScopes.add(scope);
+  persistDirtyScopes();
   setUnsaved(true);
-  setStatus("saving", "Ukladám");
   window.clearTimeout(state.syncTimer);
   state.syncTimer = window.setTimeout(() => {
     state.syncTimer = null;
@@ -371,46 +381,68 @@ function fetchRemote() {
   return next();
 }
 
-function mergeSnapshots(left, right) {
-  return {
-    shopping: normalizeShopping([...(left.shopping || []), ...(right.shopping || [])]),
-    events: normalizeEvents([...(left.events || []), ...(right.events || [])]),
-    tasks: normalizeTasks([...(left.tasks || []), ...(right.tasks || [])])
-  };
+function effectiveDirtyScopes() {
+  if (state.dirtyScopes.size) return new Set(state.dirtyScopes);
+  return state.unsaved ? new Set(["shopping", "events", "tasks"]) : new Set();
+}
+
+function hasSyncableChanges() {
+  const scopes = effectiveDirtyScopes();
+  if (!scopes.size) return false;
+  if (!state.backendLimited) return true;
+  return scopes.has("shopping");
+}
+
+function recordsEqual(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function applyRemote(remote, requestRevision) {
   const changedDuringRequest = requestRevision !== state.revision;
+  let dataChanged = false;
   if (remote.shopping) {
-    state.shopping = changedDuringRequest
+    const next = changedDuringRequest || state.dirtyScopes.has("shopping")
       ? normalizeShopping([...remote.shopping, ...state.shopping])
       : remote.shopping;
+    if (!recordsEqual(state.shopping, next)) {
+      state.shopping = next;
+      dataChanged = true;
+    }
   }
   if (remote.events) {
-    state.events = changedDuringRequest
+    const next = changedDuringRequest || state.dirtyScopes.has("events")
       ? normalizeEvents([...remote.events, ...state.events])
       : remote.events;
+    if (!recordsEqual(state.events, next)) {
+      state.events = next;
+      dataChanged = true;
+    }
   }
   if (remote.tasks) {
-    state.tasks = changedDuringRequest
+    const next = changedDuringRequest || state.dirtyScopes.has("tasks")
       ? normalizeTasks([...remote.tasks, ...state.tasks])
       : remote.tasks;
+    if (!recordsEqual(state.tasks, next)) {
+      state.tasks = next;
+      dataChanged = true;
+    }
   }
-  persistAll();
-  renderAll();
+  if (dataChanged) {
+    persistAll();
+    renderAll();
+  }
   return changedDuringRequest;
 }
 
-function postSnapshot(snapshot) {
+function postSnapshot(snapshot, scopes) {
+  const payload = { action: "sync" };
+  if (scopes.has("shopping")) payload.items = snapshot.shopping;
+  if (scopes.has("events")) payload.events = snapshot.events;
+  if (scopes.has("tasks")) payload.tasks = snapshot.tasks;
   return fetch(SHEETS_SYNC_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({
-      action: "sync",
-      items: snapshot.shopping,
-      events: snapshot.events,
-      tasks: snapshot.tasks
-    })
+    body: JSON.stringify(payload)
   }).then(readJsonResponse);
 }
 
@@ -434,6 +466,8 @@ function syncToSheets(showFeedback) {
   window.clearTimeout(state.syncTimer);
   state.syncTimer = null;
   const requestRevision = state.revision;
+  const requestedScopes = effectiveDirtyScopes();
+  if (!requestedScopes.size) return loadFromSheets(showFeedback, false);
   const local = {
     shopping: normalizeShopping(state.shopping),
     events: normalizeEvents(state.events),
@@ -442,23 +476,22 @@ function syncToSheets(showFeedback) {
   state.syncing = true;
   setStatus("saving", "Ukladám");
 
-  return fetchRemote()
-    .then(remote => postSnapshot(mergeSnapshots({
-      shopping: remote.shopping || [],
-      events: remote.events || [],
-      tasks: remote.tasks || []
-    }, local)))
+  return postSnapshot(local, requestedScopes)
     .then(finalRemote => {
       state.backendLimited = !finalRemote.events || !finalRemote.tasks;
       state.connectionError = false;
+      state.pollFailures = 0;
       const changed = applyRemote(finalRemote, requestRevision);
       state.lastSyncAt = Date.now();
       if (changed) {
-        setUnsaved(true);
         setStatus("saving", "Ukladám");
         state.syncQueued = true;
       } else {
-        setUnsaved(state.backendLimited && hasUnsupportedLocalData());
+        if (finalRemote.shopping) state.dirtyScopes.delete("shopping");
+        if (finalRemote.events) state.dirtyScopes.delete("events");
+        if (finalRemote.tasks) state.dirtyScopes.delete("tasks");
+        persistDirtyScopes();
+        setUnsaved(state.dirtyScopes.size > 0);
         setIdleStatus();
         if (showFeedback) showToast(state.backendLimited ? "Nákup je aktuálny." : "Všetko je aktuálne.");
       }
@@ -475,24 +508,24 @@ function syncToSheets(showFeedback) {
     .finally(finishSync);
 }
 
-function loadFromSheets(showFeedback) {
-  if (state.unsaved) return syncToSheets(showFeedback);
+function loadFromSheets(showFeedback, silent) {
+  if (state.unsaved && hasSyncableChanges()) return syncToSheets(showFeedback);
   if (state.syncing) return Promise.resolve(false);
   const requestRevision = state.revision;
   state.syncing = true;
-  setStatus("saving", "Načítavam");
+  if (!silent) setStatus("saving", "Načítavam");
   return fetchRemote()
     .then(remote => {
       state.backendLimited = !remote.events || !remote.tasks;
       state.connectionError = false;
+      state.pollFailures = 0;
       const changed = applyRemote(remote, requestRevision);
       state.lastSyncAt = Date.now();
-      if (changed) {
-        setUnsaved(true);
+      if (changed || hasSyncableChanges()) {
         setStatus("saving", "Ukladám");
         state.syncQueued = true;
       } else {
-        setUnsaved(state.backendLimited && hasUnsupportedLocalData());
+        setUnsaved(state.dirtyScopes.size > 0);
         setIdleStatus();
         if (showFeedback) showToast("Načítané.");
       }
@@ -500,12 +533,50 @@ function loadFromSheets(showFeedback) {
     })
     .catch(error => {
       console.error(error);
-      state.connectionError = true;
-      setIdleStatus();
+      state.pollFailures += 1;
+      if (!silent || state.pollFailures >= 2) {
+        state.connectionError = true;
+        setIdleStatus();
+      }
       if (showFeedback) showToast("Momentálne sa nedá načítať zo Sheets.");
       return false;
     })
     .finally(finishSync);
+}
+
+function liveSyncDelay() {
+  return Date.now() - state.lastInteractionAt < ACTIVE_SYNC_WINDOW
+    ? LIVE_SYNC_INTERVAL
+    : IDLE_SYNC_INTERVAL;
+}
+
+function liveSyncPaused() {
+  const active = document.activeElement;
+  if (state.drag || document.querySelector(".bottom-sheet.open")) return true;
+  if (!active || !active.matches("input, textarea, select")) return false;
+  if (active.matches('input[type="text"]')) return Boolean(active.value.trim());
+  return true;
+}
+
+function scheduleLiveSync(delay) {
+  window.clearTimeout(state.liveSyncTimer);
+  state.liveSyncTimer = window.setTimeout(runLiveSync, typeof delay === "number" ? delay : liveSyncDelay());
+}
+
+function runLiveSync() {
+  state.liveSyncTimer = null;
+  if (state.syncing) {
+    scheduleLiveSync(1000);
+    return;
+  }
+  if (document.visibilityState !== "visible" || !navigator.onLine || liveSyncPaused()) {
+    scheduleLiveSync(liveSyncPaused() ? 1500 : liveSyncDelay());
+    return;
+  }
+  const operation = state.unsaved && hasSyncableChanges()
+    ? syncToSheets(false)
+    : loadFromSheets(false, true);
+  Promise.resolve(operation).finally(() => scheduleLiveSync());
 }
 
 function sourceParts(record) {
@@ -669,7 +740,7 @@ function addShopping(name) {
   }, timestamp));
   rememberShoppingName(clean);
   persistAll();
-  markDirty();
+  markDirty(undefined, "shopping");
   renderShopping();
   haptic(10);
   return true;
@@ -683,7 +754,7 @@ function toggleShopping(id) {
   item.boughtAt = item.bought ? timestamp : null;
   stamp(item, timestamp);
   persistAll();
-  markDirty(450);
+  markDirty(450, "shopping");
   renderShopping();
   haptic(item.bought ? 18 : 8);
 }
@@ -694,7 +765,7 @@ function deleteShopping(id) {
   item.deleted = true;
   stamp(item);
   persistAll();
-  markDirty(400);
+  markDirty(400, "shopping");
   renderShopping();
   haptic(8);
 }
@@ -709,7 +780,7 @@ function markAllShopping() {
     stamp(item, timestamp);
   });
   persistAll();
-  markDirty(400);
+  markDirty(400, "shopping");
   renderShopping();
   haptic(18);
 }
@@ -723,7 +794,7 @@ function clearBoughtShopping() {
     stamp(item, timestamp);
   });
   persistAll();
-  markDirty(400);
+  markDirty(400, "shopping");
   renderShopping();
   haptic(12);
 }
@@ -830,7 +901,7 @@ function saveShoppingOrderFromDom() {
   });
   if (changed) {
     persistAll();
-    markDirty(450);
+    markDirty(450, "shopping");
   }
 }
 
@@ -1255,7 +1326,7 @@ function saveEventFromForm() {
   state.selectedDate = date;
   state.calendarCursor = startOfMonth(parseDateKey(date));
   persistAll();
-  markDirty(500);
+  markDirty(500, "events");
   renderCalendar();
   closeSheet("event");
   haptic(14);
@@ -1270,7 +1341,7 @@ function deleteCurrentEvent() {
   event.deleted = true;
   stamp(event);
   persistAll();
-  markDirty(400);
+  markDirty(400, "events");
   renderCalendar();
   closeSheet("event");
   haptic(9);
@@ -1305,7 +1376,7 @@ function addTask(title, dueDate, priority, assignedTo) {
     createdByLabel: device.label
   }, timestamp));
   persistAll();
-  markDirty();
+  markDirty(undefined, "tasks");
   renderTasks();
   haptic(10);
   return true;
@@ -1319,7 +1390,7 @@ function toggleTask(id) {
   item.doneAt = item.done ? timestamp : null;
   stamp(item, timestamp);
   persistAll();
-  markDirty(450);
+  markDirty(450, "tasks");
   renderTasks();
   haptic(item.done ? 18 : 8);
 }
@@ -1330,7 +1401,7 @@ function deleteTask(id) {
   item.deleted = true;
   stamp(item);
   persistAll();
-  markDirty(400);
+  markDirty(400, "tasks");
   renderTasks();
   haptic(8);
 }
@@ -1344,7 +1415,7 @@ function clearDoneTasks() {
     stamp(item, timestamp);
   });
   persistAll();
-  markDirty(400);
+  markDirty(400, "tasks");
   renderTasks();
   haptic(12);
 }
@@ -1552,6 +1623,12 @@ function submitTaskComposer() {
 }
 
 function bindEvents() {
+  document.addEventListener("pointerdown", () => {
+    state.lastInteractionAt = Date.now();
+  }, { passive: true });
+  document.addEventListener("keydown", () => {
+    state.lastInteractionAt = Date.now();
+  });
   document.addEventListener("pointermove", event => {
     if (!state.drag || state.drag.kind !== "pointer" || state.drag.pointerId !== event.pointerId) return;
     if (moveShoppingDrag(event.clientX, event.clientY)) event.preventDefault();
@@ -1652,14 +1729,21 @@ function bindEvents() {
     else if ($("#settings-sheet").classList.contains("open")) closeSheet("settings");
   });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && Date.now() - state.lastSyncAt > FOREGROUND_SYNC_GAP) {
-      state.unsaved ? syncToSheets(false) : loadFromSheets(false);
+    if (document.visibilityState === "visible") {
+      state.lastInteractionAt = Date.now();
+      scheduleLiveSync(0);
+    } else {
+      window.clearTimeout(state.liveSyncTimer);
     }
   });
-  window.addEventListener("online", () => state.unsaved ? syncToSheets(false) : loadFromSheets(false));
+  window.addEventListener("online", () => scheduleLiveSync(0));
 }
 
 function boot() {
+  if (state.unsaved && !state.dirtyScopes.size) {
+    ["shopping", "events", "tasks"].forEach(scope => state.dirtyScopes.add(scope));
+    persistDirtyScopes();
+  }
   state.shopping = normalizeShopping(loadJson(STORAGE.shopping, []));
   state.events = normalizeEvents(loadJson(STORAGE.events, []));
   state.tasks = normalizeTasks(loadJson(STORAGE.tasks, []));
@@ -1671,8 +1755,8 @@ function boot() {
   renderAll();
   updateDeviceUi();
   registerServiceWorker();
-  if (state.unsaved) syncToSheets(false);
-  else loadFromSheets(false);
+  const initialSync = state.unsaved ? syncToSheets(false) : loadFromSheets(false);
+  Promise.resolve(initialSync).finally(() => scheduleLiveSync());
 }
 
 if (document.readyState === "loading") {
